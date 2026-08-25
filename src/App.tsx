@@ -1,3 +1,5 @@
+import { useCallback, useEffect, useRef, useState, type WheelEvent } from 'react';
+import LunchGacha from './components/LunchGacha';
 import { useCalendarSnapshot } from './lib/useCalendarStatus';
 import { formatHolidayDate } from './lib/calendar';
 
@@ -5,9 +7,20 @@ declare global {
   interface Window {
     widgetAPI?: {
       close: () => void;
+      resizeHeight: (height: number) => void;
     };
   }
 }
+
+const PAGES = [
+  { key: 'today', label: '日历', height: 260 },
+  { key: 'gacha', label: '扭蛋', height: 420 },
+] as const;
+
+type PageKey = (typeof PAGES)[number]['key'];
+
+/** 把 wheel 节流到 ~300ms 一次 —— 一次拨轮会触发 N 次 wheel,全响应会飞过去 */
+const WHEEL_COOLDOWN_MS = 300;
 
 function FishTankBar({ label, percent }: { label: string; percent: number }) {
   const clamped = Math.min(100, Math.max(0, percent));
@@ -52,22 +65,17 @@ function HighlightLine({ status }: { status: ReturnType<typeof useCalendarSnapsh
   );
 }
 
-export default function App() {
-  const snapshot = useCalendarSnapshot();
-  const { now, weekday, lunarDate, ganzhiYear, progress, status } = snapshot;
-
+function TodayPage({
+  now,
+  weekday,
+  lunarDate,
+  ganzhiYear,
+  progress,
+  status,
+}: ReturnType<typeof useCalendarSnapshot>) {
   const dateLabel = `${now.getMonth() + 1}月${now.getDate()}日`;
-
   return (
-    <div className="card drag-region">
-      <button
-        className="close-btn no-drag"
-        title="退出"
-        onClick={() => window.widgetAPI?.close()}
-      >
-        ×
-      </button>
-
+    <>
       <div className="header">
         <span className="date">{dateLabel}</span>
         <span className="weekday">{weekday}</span>
@@ -92,6 +100,57 @@ export default function App() {
         {status.nextHoliday.start !== status.nextHoliday.end
           ? ` · 「${status.nextHoliday.name}」${formatHolidayDate(status.nextHoliday.start)}–${formatHolidayDate(status.nextHoliday.end)}`
           : ''}
+      </div>
+    </>
+  );
+}
+
+export default function App() {
+  const snapshot = useCalendarSnapshot();
+  const [pageIndex, setPageIndex] = useState(0);
+  const lastWheelRef = useRef(0);
+
+  // 翻页时让 Electron 窗口跟着变高度,确保新页能完整显示
+  useEffect(() => {
+    const height = PAGES[pageIndex].height;
+    window.widgetAPI?.resizeHeight(height);
+  }, [pageIndex]);
+
+  const handleWheel = useCallback((event: WheelEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const now = performance.now();
+    if (now - lastWheelRef.current < WHEEL_COOLDOWN_MS) return;
+    lastWheelRef.current = now;
+
+    setPageIndex((current) => {
+      // 向下滚(正向 deltaY)= 下一页,向上滚 = 上一页;到尽头循环
+      const step = event.deltaY > 0 ? 1 : -1;
+      const next = (current + step + PAGES.length) % PAGES.length;
+      return next;
+    });
+  }, []);
+
+  const currentPage: PageKey = PAGES[pageIndex].key;
+
+  return (
+    <div className="card drag-region" onWheel={handleWheel}>
+      <button
+        className="close-btn no-drag"
+        title="退出"
+        onClick={() => window.widgetAPI?.close()}
+      >
+        ×
+      </button>
+
+      <div className="page-dots no-drag" aria-hidden>
+        {PAGES.map((page, index) => (
+          <span key={page.key} className={`page-dot${index === pageIndex ? ' active' : ''}`} />
+        ))}
+      </div>
+
+      <div className="page page-fade" key={currentPage}>
+        {currentPage === 'today' && <TodayPage {...snapshot} />}
+        {currentPage === 'gacha' && <LunchGacha />}
       </div>
     </div>
   );

@@ -109,6 +109,22 @@ ipcMain.on('widget:close', () => {
   app.quit();
 });
 
+/**
+ * 翻页时由 renderer 发来新的窗口高度。保持当前 x、width 不变;
+ * 如果按当前 y 直接加高会超出屏幕工作区,则把 y 往上挪(以窗口底部为锚),
+ * 避免新页面被屏幕底边切掉。
+ */
+ipcMain.on('widget:resize-height', (_event, rawHeight) => {
+  if (!win) return;
+  const height = Math.max(160, Math.min(800, Math.round(Number(rawHeight) || 0)));
+  const bounds = win.getBounds();
+  const { workArea } = screen.getDisplayMatching(bounds);
+  const maxY = workArea.y + workArea.height - height;
+  const nextY = Math.min(bounds.y, maxY);
+  win.setBounds({ x: bounds.x, y: nextY, width: bounds.width, height });
+  saveBounds();
+});
+
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {

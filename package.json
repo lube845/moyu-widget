@@ -11,7 +11,9 @@
     "dev": "concurrently -k -n renderer,electron \"npm:dev:renderer\" \"npm:dev:electron\"",
     "build:renderer": "tsc -b && vite build",
     "build": "npm run build:renderer && electron-builder",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "parse-holidays": "node tools/parse-holidays.mjs",
+    "fetch-holidays": "node tools/fetch-holidays.mjs"
   },
   "build": {
     "appId": "com.lube.moyu-calendar-widget",

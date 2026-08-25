@@ -40,13 +40,53 @@ npm run build
 
 ## 5. 更新下一年节假日数据
 
-每年 11 月前后，国务院办公厅会发布下一年度的节假日安排。到时候打开
-`src/lib/holidays.ts`，往 `HOLIDAY_PERIODS`（放假区间）和 `ADJUSTED_WORKDAYS`
-（调休上班的周末）两个数组里追加新一年的数据即可，不需要改任何计算逻辑
-（`src/lib/workday.ts` 是纯根据这两份数据算的）。
+每年 11 月前后，国务院办公厅会发布下一年度的节假日安排。两种方式任选其一，
+生成同样的两段 TS 代码，粘贴进 `src/lib/holidays.ts` 对应的两个数组即可，
+不需要改任何计算逻辑（`workday.ts` 是纯根据这两份数据算的）。
 
-2026 年的数据来源：国务院办公厅《关于2026年部分节假日安排的通知》
-（2025年11月4日发布）。
+### 方式 A：从第三方 API 拉（最快）
+
+```powershell
+npm run fetch-holidays -- 2027
+```
+
+底层走 `https://timor.tech/api/holiday/year/{year}`（免费、无需 key）。
+无需联网自检：`npm run fetch-holidays -- --self-test`。
+
+### 方式 B：粘贴国务院通知原文（最权威）
+
+把通知原文保存成文件或复制到剪贴板：
+
+```powershell
+# 从文件
+npm run parse-holidays -- 2027 < notice-2027.txt
+# 从剪贴板
+Get-Clipboard | npm run parse-holidays -- 2027
+```
+
+支持的通知格式举例：
+
+```
+一、元旦：1月1日（周四）至3日（周六）放假调休，共3天。1月4日（周日）上班。
+二、春节：2月15日（农历腊月二十八、周日）至23日（农历正月初七、周一）放假调休，共9天。2月14日（周六）、2月28日（周六）上班。
+...
+```
+
+无需联网自检：`npm run parse-holidays -- --self-test`。
+
+### 两种方式输出都一样
+
+```ts
+HOLIDAY_PERIODS 追加：
+  { name: '元旦', start: '2027-01-01', end: '2027-01-03' }, // 五–日
+  ...
+ADJUSTED_WORKDAYS 追加：
+  '2027-01-04', // 一
+  ...
+```
+
+每行末尾的星期注释是工具自动算的，对照原文能一眼看出有没有解析错。
+贴完之后把 `holidays.ts` 顶部注释里的数据来源年份改成新一年即可。
 
 ## 6. 项目结构
 
@@ -59,10 +99,13 @@ src/
 ├── styles.css                # 卡片样式（鱼缸进度条在这里）
 ├── main.tsx                  # React 渲染入口
 └── lib/
-    ├── calendar.ts            # 农历/干支纪年/时间进度计算（和原项目一致）
-    ├── holidays.ts             # 内置节假日数据（每年手动更新一次）
-    ├── workday.ts              # 根据 holidays.ts 算出今天是否上班/休息/调休等
-    └── useCalendarStatus.ts    # 每分钟刷新一次上面这些数据的 React hook
+     ├── calendar.ts            # 农历/干支纪年/时间进度计算（和原项目一致）
+     ├── holidays.ts             # 内置节假日数据（每年用 parse/fetch-holidays 更新）
+     ├── workday.ts              # 根据 holidays.ts 算出今天是否上班/休息/调休等
+     └── useCalendarStatus.ts    # 每分钟刷新一次上面这些数据的 React hook
+tools/
+├── parse-holidays.mjs       # 解析国务院通知文本 → holidays.ts 代码片段
+└── fetch-holidays.mjs       # 从 timor.tech API 拉数据 → holidays.ts 代码片段
 ```
 
 ## 7. 想换回原版视觉风格？
