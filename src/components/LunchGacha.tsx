@@ -114,26 +114,28 @@ export default function LunchGacha() {
 
       {flash && <div className={`lunch-flash lunch-flash--${flash.kind}`}>{flash.text}</div>}
 
-      <form className="lunch-form" onSubmit={submitItem}>
-        <input
-          className="no-drag"
-          value={itemInput}
-          maxLength={30}
-          placeholder="饭名,例如 老乡鸡"
-          aria-label="饭名"
-          onChange={(event) => setItemInput(event.target.value)}
-        />
-        <input
-          className="no-drag"
-          value={nameInput}
-          maxLength={20}
-          placeholder="你的名字"
-          aria-label="你的名字"
-          onChange={(event) => setNameInput(event.target.value)}
-        />
-        <button type="submit" className="lunch-submit no-drag">
-          投喂
-        </button>
+<form className="lunch-form" onSubmit={submitItem}>
+        <div className="lunch-form-row">
+          <input
+            className="no-drag"
+            value={itemInput}
+            maxLength={30}
+            placeholder="饭名,例如 老乡鸡"
+            aria-label="饭名"
+            onChange={(event) => setItemInput(event.target.value)}
+          />
+          <input
+            className="no-drag"
+            value={nameInput}
+            maxLength={20}
+            placeholder="你的名字"
+            aria-label="你的名字"
+            onChange={(event) => setNameInput(event.target.value)}
+          />
+          <button type="submit" className="lunch-submit no-drag">
+            投喂
+          </button>
+        </div>
       </form>
     </section>
   );

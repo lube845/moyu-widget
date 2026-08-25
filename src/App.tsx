@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type WheelEvent } from 'react';
+import { useCallback, useRef, useState, type WheelEvent } from 'react';
 import LunchGacha from './components/LunchGacha';
 import { useCalendarSnapshot } from './lib/useCalendarStatus';
 import { formatHolidayDate } from './lib/calendar';
@@ -7,14 +7,13 @@ declare global {
   interface Window {
     widgetAPI?: {
       close: () => void;
-      resizeHeight: (height: number) => void;
     };
   }
 }
 
 const PAGES = [
-  { key: 'today', label: '日历', height: 260 },
-  { key: 'gacha', label: '扭蛋', height: 420 },
+  { key: 'today', label: '日历' },
+  { key: 'gacha', label: '扭蛋' },
 ] as const;
 
 type PageKey = (typeof PAGES)[number]['key'];
@@ -109,12 +108,6 @@ export default function App() {
   const snapshot = useCalendarSnapshot();
   const [pageIndex, setPageIndex] = useState(0);
   const lastWheelRef = useRef(0);
-
-  // 翻页时让 Electron 窗口跟着变高度,确保新页能完整显示
-  useEffect(() => {
-    const height = PAGES[pageIndex].height;
-    window.widgetAPI?.resizeHeight(height);
-  }, [pageIndex]);
 
   const handleWheel = useCallback((event: WheelEvent<HTMLDivElement>) => {
     event.preventDefault();
