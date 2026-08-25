@@ -1,0 +1,189 @@
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  /* 整体保持透明，只有 .card 本身不透明，
+     这样 Electron 的无边框透明窗口只会露出卡片形状。 */
+  background: transparent;
+  font-family:
+    -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+.card {
+  position: relative;
+  width: 280px;
+  padding: 20px 22px 16px;
+  background: #fbf6ec;
+  border: 1px solid rgba(58, 54, 46, 0.08);
+  border-radius: 20px;
+  box-shadow:
+    0 12px 28px rgba(58, 54, 46, 0.16),
+    0 2px 6px rgba(58, 54, 46, 0.08);
+  color: #3a362e;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(58, 54, 46, 0.08);
+  color: #8b8477;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.card:hover .close-btn {
+  opacity: 1;
+}
+
+.close-btn:hover {
+  background: #c97b84;
+  color: #fff;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.date {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.weekday {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5b7f5a;
+  letter-spacing: 1px;
+}
+
+.lunar {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #8b8477;
+  letter-spacing: 0.3px;
+}
+
+.divider {
+  height: 1px;
+  margin: 14px 0 12px;
+  background: linear-gradient(
+    to right,
+    rgba(58, 54, 46, 0.12),
+    rgba(58, 54, 46, 0)
+  );
+}
+
+.highlight {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #3a362e;
+}
+
+.highlight b {
+  color: #e08e45;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.tanks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tank-row {
+  display: grid;
+  grid-template-columns: 32px 1fr 34px;
+  align-items: center;
+  gap: 8px;
+}
+
+.tank-label {
+  font-size: 11px;
+  color: #8b8477;
+}
+
+.tank-track {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: #efe7d8;
+  overflow: hidden;
+}
+
+.tank-fill {
+  position: relative;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7fa98d, #5b7f5a);
+  background-size: 200% 100%;
+  animation: tank-shimmer 5s ease-in-out infinite;
+  transition: width 0.6s ease;
+}
+
+@keyframes tank-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.tank-fish {
+  position: absolute;
+  right: -7px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+}
+
+.tank-percent {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: #8b8477;
+  text-align: right;
+}
+
+.footer {
+  margin-top: 14px;
+  font-size: 10.5px;
+  color: #a8a196;
+  line-height: 1.5;
+}

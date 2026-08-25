@@ -1,0 +1,45 @@
+{
+  "name": "moyu-calendar-widget",
+  "version": "0.1.0",
+  "private": true,
+  "description": "摸鱼日历桌面小组件 —— 基于 AKAama/moyu-calendar 抽卡片重做",
+  "main": "electron/main.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev:renderer": "vite",
+    "dev:electron": "wait-on tcp:5173 && cross-env NODE_ENV=development electron .",
+    "dev": "concurrently -k -n renderer,electron \"npm:dev:renderer\" \"npm:dev:electron\"",
+    "build:renderer": "tsc -b && vite build",
+    "build": "npm run build:renderer && electron-builder",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "build": {
+    "appId": "com.lube.moyu-calendar-widget",
+    "productName": "摸鱼日历",
+    "files": ["dist/**", "electron/**"],
+    "directories": { "output": "release" },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "@vitejs/plugin-react": "^6.1.0",
+    "concurrently": "^10.0.5",
+    "cross-env": "^10.1.0",
+    "electron": "^44.0.0",
+    "electron-builder": "^26.15.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2",
+    "wait-on": "^9.1.0"
+  }
+}
