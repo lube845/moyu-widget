@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, type WheelEvent } from 'react';
 import LunchGacha from './components/LunchGacha';
+import WaterTracker from './components/WaterTracker';
 import { useCalendarSnapshot } from './lib/useCalendarStatus';
 import { formatHolidayDate } from './lib/calendar';
 
@@ -13,6 +14,7 @@ declare global {
 
 const PAGES = [
   { key: 'today', label: '日历' },
+  { key: 'water', label: '饮水' },
   { key: 'gacha', label: '扭蛋' },
 ] as const;
 
@@ -143,6 +145,7 @@ export default function App() {
 
       <div className="page page-fade" key={currentPage}>
         {currentPage === 'today' && <TodayPage {...snapshot} />}
+        {currentPage === 'water' && <WaterTracker />}
         {currentPage === 'gacha' && <LunchGacha />}
       </div>
     </div>
