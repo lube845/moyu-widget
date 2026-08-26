@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>专注摸鱼 · 第三页设计稿</title>
+<style>
+  :root{
+    --bg:#FBF6EC;
+    --text-primary:#3A362E;
+    --text-secondary:#8B8477;
+    --text-muted:#A8A196;
+    --accent-green:#5B7F5A;
+    --fill-green:#6C8E70;
+    --track-bg:#EFE7D8;
+    --accent-orange:#E08E45;
+    --accent-orange-dark:#B96B27;
+    --accent-green-dark:#4A6A48;
+    --dot-green:#4E7A52;
+    --dot-gray:#D6D0C3;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; background:#e9e5db;
+    display:flex; align-items:center; justify-content:center;
+    min-height:100vh;
+    font-family:'PingFang SC','Microsoft YaHei',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  }
+
+  /* ============ 卡片容器：与第二页保持完全一致的尺寸 423 x 398 ============ */
+  .card{
+    width:423px; height:398px;
+    background:var(--bg);
+    border-radius:26px;
+    box-shadow:0 10px 34px rgba(58,54,46,.14);
+    position:relative;
+    padding:20px 24px 16px;
+    display:flex; flex-direction:column;
+    overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+  }
+
+  .dots{position:absolute; top:16px; left:18px; display:flex; gap:6px;}
+  .dot{width:8px;height:8px;border-radius:50%;}
+  .dot.g{background:var(--dot-green);}
+  .dot.gray{background:var(--dot-gray);}
+
+  .reset-btn{
+    position:absolute; top:16px; right:20px;
+    font-size:13px; color:var(--text-secondary); opacity:.55;
+    cursor:pointer; padding:2px 6px; border-radius:6px;
+    transition:opacity .2s ease, background .2s ease;
+  }
+  .reset-btn:hover{opacity:1; background:rgba(58,54,46,.06);}
+
+  .header{display:flex; align-items:baseline; gap:10px; margin-top:10px;}
+  h1{font-size:26px; font-weight:800; margin:0; color:var(--text-primary); letter-spacing:.3px;}
+  .tag{font-size:14.5px; font-weight:600; color:var(--accent-green); transition:color .3s ease;}
+  .tag.work{color:var(--accent-orange);}
+
+  .subtitle{margin:9px 0 0; font-size:13.5px; color:var(--text-secondary); line-height:1.5;}
+
+  .divider{height:1px; background:rgba(58,54,46,.09); margin:14px 0;}
+
+  .highlight{margin:0 0 12px; font-size:15.5px; line-height:1.6; color:var(--text-primary);}
+  .highlight b{color:var(--accent-orange); font-weight:800; font-size:1.05em; transition:color .3s ease;}
+  .card.is-break .highlight b{color:var(--accent-green);}
+
+  /* ============ 圆形计时器 ============ */
+  .timer-wrap{
+    flex:1;
+    min-height:0;
+    display:flex; justify-content:center; align-items:center;
+    margin:0 auto 6px;
+    position:relative;
+  }
+  .timer-svg{
+    position:absolute; inset:0; margin:auto;
+    transform:rotate(-90deg);
+  }
+  .timer-track, .timer-progress{
+    fill:none; stroke-width:8; stroke-linecap:round;
+  }
+  .timer-track{stroke:var(--track-bg);}
+  .timer-progress{
+    stroke:var(--accent-orange);
+    transition:stroke .35s ease, stroke-dashoffset .95s linear;
+    filter:drop-shadow(0 1px 2px rgba(224,142,69,.35));
+  }
+  .card.is-break .timer-progress{
+    stroke:var(--accent-green);
+    filter:drop-shadow(0 1px 2px rgba(91,127,90,.3));
+  }
+
+  .timer-text{
+    position:relative; z-index:1;
+    display:flex; flex-direction:column; align-items:center;
+    text-align:center; pointer-events:none;
+  }
+  .time-display{
+    font-size:38px; font-weight:800; color:var(--text-primary);
+    font-variant-numeric:tabular-nums; line-height:1;
+    letter-spacing:-.5px;
+  }
+  .time-label{
+    margin-top:6px; font-size:12px; font-weight:600;
+    color:var(--accent-orange); letter-spacing:.5px;
+    transition:color .3s ease;
+  }
+  .card.is-break .time-label{color:var(--accent-green);}
+
+  /* ============ 控件 ============ */
+  .controls{
+    display:flex; justify-content:center; align-items:center; gap:10px;
+    margin:0 0 12px;
+    flex-shrink:0;
+  }
+  .ctrl-btn{
+    padding:7px 14px; border-radius:18px;
+    font-size:13px; font-weight:700; cursor:pointer;
+    border:none; font-family:inherit; line-height:1.2;
+    transition:transform .12s ease, box-shadow .12s ease, background .2s ease;
+    -webkit-user-select:none; user-select:none;
+  }
+  .ctrl-btn.primary{
+    background:var(--accent-orange); color:#fff;
+    padding:7px 22px;
+    box-shadow:0 3px 0 var(--accent-orange-dark);
+  }
+  .card.is-break .ctrl-btn.primary{
+    background:var(--accent-green);
+    box-shadow:0 3px 0 var(--accent-green-dark);
+  }
+  .ctrl-btn.primary:active{
+    transform:translateY(1px);
+    box-shadow:0 2px 0 var(--accent-orange-dark);
+  }
+  .card.is-break .ctrl-btn.primary:active{
+    box-shadow:0 2px 0 var(--accent-green-dark);
+  }
+  .ctrl-btn.secondary{
+    background:rgba(58,54,46,.06); color:var(--text-secondary);
+    padding:7px 14px;
+  }
+  .ctrl-btn.secondary:hover{background:rgba(58,54,46,.1);}
+  .ctrl-btn.icon-only{
+    padding:7px 12px; min-width:36px;
+    font-size:14px;
+  }
+
+  /* ============ 进度条（与第二页完全一致）============ */
+  .progress-row{display:flex; align-items:center; gap:10px; flex-shrink:0;}
+  .progress-row .label{font-size:13.5px; color:var(--text-secondary); width:60px; flex-shrink:0;}
+  .bar-track{position:relative; flex:1; height:9px; background:var(--track-bg); border-radius:5px;}
+  .bar-fill{
+    position:absolute; left:0; top:0; height:100%; width:0%;
+    border-radius:5px; background:linear-gradient(90deg,#7DA381,var(--fill-green));
+    transition:width .6s cubic-bezier(.4,0,.2,1);
+  }
+  .bar-fill .mascot{
+    position:absolute; right:-10px; top:50%; transform:translateY(-50%);
+    font-size:15px; line-height:1;
+  }
+  .percent{width:38px; text-align:right; font-size:13.5px; font-weight:700; color:var(--text-primary);}
+
+  .bottom-caption{margin-top:11px; font-size:12px; color:var(--text-muted); line-height:1.5; flex-shrink:0;}
+
+  .pager{position:absolute; left:10px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:5px;}
+  .pager span{width:5px; height:5px; border-radius:999px; background:var(--dot-gray); transition:all .2s ease;}
+  .pager span.active{height:14px; background:var(--dot-green);}
+
+  /* ============ 阶段切换完成时的小提示 ============ */
+  .toast{
+    position:absolute; top:54px; left:50%; transform:translateX(-50%) translateY(-6px);
+    background:rgba(58,54,46,.88); color:#fff;
+    padding:5px 12px; border-radius:14px;
+    font-size:12px; font-weight:600;
+    opacity:0; pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease;
+    z-index:5;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (prefers-reduced-motion: reduce){
+    .timer-progress, .bar-fill, .toast{animation:none !important; transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+  <div class="dots">
+    <span class="dot gray"></span>
+    <span class="dot gray"></span>
+    <span class="dot gray"></span>
+    <span class="dot g"></span>
+  </div>
+  <div class="reset-btn" id="resetBtn" title="重置今日进度">↺ 重置</div>
+
+  <div class="header">
+    <h1>专注摸鱼</h1>
+    <span class="tag work" id="phaseTag">🍅 专注中</span>
+  </div>
+  <p class="subtitle">每专注 25 分钟奖励 5 分钟摸鱼，劳逸结合摸得更久一点</p>
+
+  <div class="divider"></div>
+
+  <p class="highlight" id="highlightText">本轮还剩 <b>25:00</b>，完成后可摸鱼 5 分钟</p>
+
+  <div class="timer-wrap">
+    <svg class="timer-svg" viewBox="0 0 160 160" width="160" height="160">
+      <circle class="timer-track" cx="80" cy="80" r="72"></circle>
+      <circle class="timer-progress" id="timerProgress" cx="80" cy="80" r="72"></circle>
+    </svg>
+    <div class="timer-text">
+      <div class="time-display" id="timeDisplay">25:00</div>
+      <div class="time-label" id="timeLabel">专注 · 第 1 轮</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn secondary" id="skipBtn">跳过</button>
+    <button class="ctrl-btn primary" id="startBtn">开始专注</button>
+    <button class="ctrl-btn secondary icon-only" id="resetPhaseBtn" title="重置当前阶段">↺</button>
+  </div>
+
+  <div class="progress-row">
+    <span class="label">今日轮次</span>
+    <div class="bar-track">
+      <div class="bar-fill" id="barFill" style="width:0%"><span class="mascot">🐟</span></div>
+    </div>
+    <span class="percent" id="percentText">0%</span>
+  </div>
+
+  <p class="bottom-caption" id="bottomCaption">已完成 0 轮 · 目标 8 轮 · 每轮 25 分钟</p>
+
+  <div class="pager">
+    <span></span><span></span><span></span><span class="active"></span>
+  </div>
+
+  <div class="toast" id="toast">本轮完成！开始摸鱼 🐟</div>
+</div>
+
+<script>
+  const WORK_SECONDS  = 25 * 60;
+  const BREAK_SECONDS = 5  * 60;
+  const DAILY_TARGET  = 8;
+  const RADIUS        = 72;
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+  let phase     = 'work';   // 'work' | 'break'
+  let remaining = WORK_SECONDS;
+  let running   = false;
+  let completed = 0;        // 完成的专注轮数
+  let intervalId = null;
+
+  const cardEl         = document.getElementById('card');
+  const timerProgress  = document.getElementById('timerProgress');
+  const timeDisplay    = document.getElementById('timeDisplay');
+  const timeLabel      = document.getElementById('timeLabel');
+  const phaseTag       = document.getElementById('phaseTag');
+  const startBtn       = document.getElementById('startBtn');
+  const skipBtn        = document.getElementById('skipBtn');
+  const resetPhaseBtn  = document.getElementById('resetPhaseBtn');
+  const resetBtn       = document.getElementById('resetBtn');
+  const barFill        = document.getElementById('barFill');
+  const percentText    = document.getElementById('percentText');
+  const bottomCaption  = document.getElementById('bottomCaption');
+  const highlightText  = document.getElementById('highlightText');
+  const toast          = document.getElementById('toast');
+
+  timerProgress.setAttribute('stroke-dasharray', CIRCUMFERENCE.toFixed(2));
+  timerProgress.setAttribute('stroke-dashoffset', '0');
+
+  const fmt = (sec) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  };
+
+  function setPhase(p, opts = {}){
+    phase = p;
+    remaining = (p === 'work') ? WORK_SECONDS : BREAK_SECONDS;
+    cardEl.classList.toggle('is-break', p === 'break');
+    phaseTag.classList.toggle('work', p === 'work');
+    phaseTag.textContent = (p === 'work') ? '🍅 专注中' : '🐟 摸鱼中';
+    timeLabel.textContent = (p === 'work')
+      ? `专注 · 第 ${completed + 1} 轮`
+      : '休息 · 自由摸鱼';
+
+    if(!opts.keepRunning){
+      running = false;
+      clearInterval(intervalId);
+    }
+    updateUI();
+  }
+
+  function updateUI(){
+    timeDisplay.textContent = fmt(remaining);
+    const total    = (phase === 'work') ? WORK_SECONDS : BREAK_SECONDS;
+    const elapsed  = total - remaining;
+    const offset   = CIRCUMFERENCE * (1 - elapsed / total);
+    timerProgress.setAttribute('stroke-dashoffset', offset.toFixed(2));
+
+    highlightText.innerHTML = (phase === 'work')
+      ? `本轮还剩 <b>${fmt(remaining)}</b>，完成后可摸鱼 5 分钟`
+      : `摸鱼 <b>${fmt(remaining)}</b>，休息完继续下一轮专注`;
+
+    if(!running){
+      if(phase === 'work'){
+        startBtn.textContent = (remaining === WORK_SECONDS) ? '开始专注' : '继续专注';
+      } else {
+        startBtn.textContent = (remaining === BREAK_SECONDS) ? '开始摸鱼' : '继续摸鱼';
+      }
+    } else {
+      startBtn.textContent = '暂停';
+    }
+
+    const pct = Math.round(completed / DAILY_TARGET * 100);
+    barFill.style.width = pct + '%';
+    percentText.textContent = pct + '%';
+    bottomCaption.textContent = (completed >= DAILY_TARGET)
+      ? `🎉 今日已完成 ${completed} 轮，目标 ${DAILY_TARGET} 轮达成！可以下班摸鱼了`
+      : `已完成 ${completed} 轮 · 目标 ${DAILY_TARGET} 轮 · 每轮 25 分钟`;
+  }
+
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast._tid);
+    showToast._tid = setTimeout(() => toast.classList.remove('show'), 1800);
+  }
+
+  function tick(){
+    if(remaining > 0){
+      remaining--;
+      updateUI();
+      return;
+    }
+    clearInterval(intervalId);
+    running = false;
+    if(phase === 'work'){
+      completed++;
+      showToast('本轮完成！开始摸鱼 🐟');
+      setPhase('break');
+    } else {
+      showToast('摸鱼结束！下一轮专注 🍅');
+      setPhase('work');
+    }
+  }
+
+  function start(){
+    if(running) return;
+    running = true;
+    intervalId = setInterval(tick, 1000);
+    updateUI();
+  }
+  function pause(){
+    running = false;
+    clearInterval(intervalId);
+    updateUI();
+  }
+  function toggle(){ running ? pause() : start(); }
+
+  function skip(){
+    clearInterval(intervalId);
+    running = false;
+    if(phase === 'work'){
+      // 跳过专注 → 直接进摸鱼,不计入完成数
+      setPhase('break');
+    } else {
+      // 跳过摸鱼 → 下一轮专注
+      setPhase('work');
+    }
+  }
+  function resetPhase(){ setPhase(phase); }
+  function resetAll(){
+    clearInterval(intervalId);
+    running = false;
+    completed = 0;
+    setPhase('work');
+  }
+
+  startBtn.addEventListener('click', toggle);
+  skipBtn.addEventListener('click', skip);
+  resetPhaseBtn.addEventListener('click', resetPhase);
+  resetBtn.addEventListener('click', resetAll);
+
+  // 键盘快捷键:空格开始/暂停,S 跳过,R 重置
+  document.addEventListener('keydown', (e) => {
+    if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if(e.code === 'Space'){ e.preventDefault(); toggle(); }
+    else if(e.key === 's' || e.key === 'S'){ skip(); }
+    else if(e.key === 'r' || e.key === 'R'){ resetAll(); }
+  });
+
+  setPhase('work');
+</script>
+
+</body>
+</html>

@@ -1,142 +1,146 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { addItem, loadItems, pickRandom, type LunchItem } from '../lib/lunchItems';
+import { useRef, useState, type FormEvent } from 'react';
+import { addItem, loadItems, pickRandom, removeItem, type LunchItem } from '../lib/lunchItems';
 
-const MAX_VISIBLE_CAPSULES = 9;
-
-// 替代原项目的 Notification 弹窗 —— 在小组件里弹窗显得突兀,
-// 把反馈合并到一个三秒后自动消失的内联消息区域。
-type Flash = { kind: 'success' | 'warning' | 'error'; text: string } | null;
+const ROLLING_STEPS = 18;        // 循环步数,模仿转轮减速
+const ROLLING_BASE_MS = 45;      // 起步间隔
+const ROLLING_STEP_MS = 9;       // 每步递增(减速)
 
 export default function LunchGacha() {
   const [items, setItems] = useState<LunchItem[]>(() => loadItems());
-  const [pickedItem, setPickedItem] = useState<LunchItem | null>(null);
-  const [itemInput, setItemInput] = useState('');
-  const [nameInput, setNameInput] = useState('');
+  const [inManage, setInManage] = useState(false);
+  const [newOption, setNewOption] = useState('');
   const [spinning, setSpinning] = useState(false);
-  const [flash, setFlash] = useState<Flash>(null);
+  const [displayItem, setDisplayItem] = useState<LunchItem | null>(null);
+  const [spinCount, setSpinCount] = useState(0);
 
-  useEffect(() => {
-    if (!flash) return;
-    const timer = window.setTimeout(() => setFlash(null), 2400);
-    return () => window.clearTimeout(timer);
-  }, [flash]);
+  const stepRef = useRef(0);
+  const lastPickRef = useRef<string | null>(null);
 
-  const visibleCapsules = useMemo(() => items.slice(0, MAX_VISIBLE_CAPSULES), [items]);
+  const handleAdd = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const trimmed = newOption.trim();
+    if (!trimmed) return;
+    setItems(addItem(trimmed));
+    setNewOption('');
+  };
 
-  const submitItem = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const item = itemInput.trim();
-    const name = nameInput.trim();
-    if (!item || !name) {
-      setFlash({ kind: 'warning', text: '还差一点点:饭名和投喂人都要填。' });
-      return;
-    }
-    const entry = addItem(item, name);
-    setItems(loadItems());
-    setItemInput('');
-    setNameInput('');
-    setFlash({ kind: 'success', text: `${entry.item} 已放进午饭盒。` });
+  const handleDelete = (item: string) => {
+    if (items.length <= 1) return; // 至少保留 1 个
+    setItems(removeItem(item));
+    if (lastPickRef.current === item) lastPickRef.current = null;
   };
 
   const spin = () => {
     if (spinning || items.length === 0) return;
-    const picked = pickRandom();
-    if (!picked) {
-      setFlash({ kind: 'error', text: '扭蛋机卡住了,稍后再扭。' });
-      return;
-    }
     setSpinning(true);
-    setPickedItem(null);
-    // 原项目 1.8s,这里稍短,小组件节奏更紧凑
-    window.setTimeout(() => {
-      setPickedItem(picked);
-      setSpinning(false);
-    }, 1400);
+
+    // ≥2 个选项时,避免连续两次都扭到同一个
+    let pick = pickRandom(items);
+    if (items.length >= 2) {
+      let tries = 0;
+      while (pick?.item === lastPickRef.current && tries < 8) {
+        pick = pickRandom(items);
+        tries++;
+      }
+    }
+    const finalPick = pick;
+
+    stepRef.current = 0;
+    const tick = () => {
+      stepRef.current++;
+      const random = pickRandom(items);
+      setDisplayItem(random);
+      if (stepRef.current < ROLLING_STEPS) {
+        setTimeout(tick, ROLLING_BASE_MS + stepRef.current * ROLLING_STEP_MS);
+      } else {
+        setDisplayItem(finalPick);
+        setSpinning(false);
+        setSpinCount((c) => c + 1);
+        if (finalPick) lastPickRef.current = finalPick.item;
+      }
+    };
+    tick();
   };
 
   return (
     <section className="lunch-section">
       <header className="lunch-title-row">
-        <span className="lunch-title">午饭扭蛋机</span>
-        <span className="lunch-pool-count">盒内 {items.length} 选</span>
+        <span className="lunch-title">午饭扭蛋</span>
+        <div className="title-right">
+          <span className="lunch-pool-count">共 {items.length} 选</span>
+          <button
+            type="button"
+            className="manage-toggle no-drag"
+            onClick={() => setInManage((v) => !v)}
+          >
+            {inManage ? '‹ 返回' : '✎ 管理'}
+          </button>
+        </div>
       </header>
 
-      <div className={`lunch-gacha-machine${spinning ? ' shaking' : ''}`} aria-hidden="true">
-        <div className="lunch-gacha-dome">
-          {visibleCapsules.length === 0 ? (
-            <>
-              <span className="lunch-capsule capsule-1">🍙</span>
-              <span className="lunch-capsule capsule-2">🍜</span>
-              <span className="lunch-capsule capsule-3">🍗</span>
-            </>
-          ) : (
-            visibleCapsules.map((entry, index) => (
-              <span key={entry.id} className={`lunch-capsule capsule-${(index % 9) + 1}`}>
-                {entry.item.slice(0, 3)}
+      {inManage ? (
+        <div className="manage-view">
+          <div className="chip-list">
+            {items.map((it) => (
+              <span key={it.item} className="chip">
+                <span className="chip-label">{it.item}</span>
+                <button
+                  type="button"
+                  className="chip-del no-drag"
+                  disabled={items.length <= 1}
+                  onClick={() => handleDelete(it.item)}
+                  title={items.length <= 1 ? '至少保留 1 个选项' : '删除'}
+                >
+                  ×
+                </button>
               </span>
-            ))
-          )}
-          <div className="lunch-dome-shine" />
-        </div>
-
-        <div className="lunch-machine-body">
-          <div className="lunch-machine-label">
-            <span>LUNCH</span>
-            <strong>午饭盒</strong>
+            ))}
           </div>
-          <button
-            className="lunch-gacha-knob no-drag"
-            type="button"
-            disabled={items.length === 0}
-            onClick={spin}
-            aria-label="扭一下"
+          <form className="add-row" onSubmit={handleAdd}>
+            <input
+              type="text"
+              className="no-drag"
+              value={newOption}
+              onChange={(e) => setNewOption(e.target.value)}
+              placeholder="新选项，例如 沙县小吃"
+              maxLength={12}
+              aria-label="新选项"
+            />
+            <button type="submit" className="add-btn no-drag">添加</button>
+          </form>
+        </div>
+      ) : (
+        <div className="spin-view">
+          <div
+            className={
+              `result-window` +
+              (!displayItem && !spinning ? ' idle' : '') +
+              (spinning ? ' rolling' : '')
+            }
           >
-            <span>{spinning ? '扭动中' : '扭一下'}</span>
-          </button>
-          <div className="lunch-gacha-slot">
-            <span>{spinning ? '咔哒咔哒…' : '今日饭票出口'}</span>
+            {spinning ? '' : (displayItem?.item || '扭一下试试看')}
+          </div>
+          <div className="spin-row">
+            <button
+              type="button"
+              className={`spin-btn no-drag${spinning ? ' spinning' : ''}`}
+              onClick={spin}
+              disabled={items.length === 0}
+              aria-label="扭一下"
+            >
+              {spinning ? '扭动中' : '扭一下'}
+            </button>
           </div>
         </div>
-        <div className="lunch-machine-feet" />
-      </div>
+      )}
 
-      <div className={`lunch-result${pickedItem ? ' active' : ''}`}>
-        {pickedItem ? (
-          <>
-            <span className="lunch-result-label">今日饭票</span>
-            <strong>{pickedItem.item}</strong>
-            <p>由 {pickedItem.name} 投喂</p>
-          </>
-        ) : (
-          <p>{items.length === 0 ? '请先往午饭盒里投喂几样饭。' : '扭一下,让命运替你点餐。'}</p>
-        )}
-      </div>
-
-      {flash && <div className={`lunch-flash lunch-flash--${flash.kind}`}>{flash.text}</div>}
-
-<form className="lunch-form" onSubmit={submitItem}>
-        <div className="lunch-form-row">
-          <input
-            className="no-drag"
-            value={itemInput}
-            maxLength={30}
-            placeholder="饭名,例如 老乡鸡"
-            aria-label="饭名"
-            onChange={(event) => setItemInput(event.target.value)}
-          />
-          <input
-            className="no-drag"
-            value={nameInput}
-            maxLength={20}
-            placeholder="你的名字"
-            aria-label="你的名字"
-            onChange={(event) => setNameInput(event.target.value)}
-          />
-          <button type="submit" className="lunch-submit no-drag">
-            投喂
-          </button>
-        </div>
-      </form>
+      <p className="lunch-caption">
+        {inManage
+          ? '点 × 删除选项，至少保留 1 个'
+          : spinCount > 0 && displayItem
+            ? `今天已扭 ${spinCount} 次 · 这顿：${displayItem.item}`
+            : '还没扭过，点下面的按钮试试'}
+      </p>
     </section>
   );
 }

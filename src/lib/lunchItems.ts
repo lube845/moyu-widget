@@ -1,76 +1,72 @@
-// 本地"饭盒":替代原项目的 /api/lunch 后端,纯 localStorage 持久化。
-// 原项目是"公共饭盒",这里改为用户自己的私人饭盒 —— 项目本身不联网,
-// 公共饭盒所需的社区协同不在这小组件的能力范围内。
-
+// 本地"饭盒":午餐选项的纯 localStorage 持久化。
+// 重写版:只保留饭名(去掉投喂人字段),用 item 字符串本身做 React key。
 const STORAGE_KEY = 'moyu-lunch-items-v1';
 
 export interface LunchItem {
-  id: string;
   item: string;
-  name: string;
-  createdAt: string;
 }
 
-const SEED_ITEMS: Omit<LunchItem, 'id' | 'createdAt'>[] = [
-  { item: '老乡鸡', name: '系统种子' },
-  { item: '兰州拉面', name: '系统种子' },
-  { item: '麦当劳', name: '系统种子' },
-  { item: '黄焖鸡米饭', name: '系统种子' },
-  { item: '沙县小吃', name: '系统种子' },
-  { item: '麻辣烫', name: '系统种子' },
-  { item: '饺子', name: '系统种子' },
-  { item: '冒菜', name: '系统种子' },
+const SEED_ITEMS: string[] = [
+  '老乡鸡',
+  '兰州拉面',
+  '麦当劳',
+  '黄焖鸡米饭',
+  '沙县小吃',
+  '麻辣烫',
+  '饺子',
+  '冒菜',
+  '米线',
 ];
 
-function safeParse(raw: string | null): LunchItem[] | null {
+function safeParse(raw: string | null): string[] | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as LunchItem[]) : null;
+    if (!Array.isArray(parsed)) return null;
+    const items = parsed.filter((x): x is string => typeof x === 'string' && x.length > 0);
+    // dedupe(避免历史脏数据里有重复)
+    return Array.from(new Set(items));
   } catch {
     return null;
   }
 }
 
-function seed(): LunchItem[] {
-  return SEED_ITEMS.map((entry, index) => ({
-    ...entry,
-    id: `seed-${index}`,
-    createdAt: new Date(0).toISOString(),
-  }));
+function seed(): string[] {
+  return [...SEED_ITEMS];
 }
 
 export function loadItems(): LunchItem[] {
-  if (typeof window === 'undefined') return seed();
-  return safeParse(window.localStorage.getItem(STORAGE_KEY)) ?? seed();
+  if (typeof window === 'undefined') return seed().map((item) => ({ item }));
+  const raw = safeParse(window.localStorage.getItem(STORAGE_KEY)) ?? seed();
+  return raw.map((item) => ({ item }));
 }
 
-export function saveItems(items: LunchItem[]): void {
+function persist(items: LunchItem[]): void {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items.map((it) => it.item)));
   } catch {
     // 隐私模式或磁盘满,静默忽略 —— 内存里依然能用,只是关了就丢
   }
 }
 
-export function addItem(item: string, name: string): LunchItem {
-  const entry: LunchItem = {
-    id: crypto.randomUUID(),
-    item,
-    name,
-    createdAt: new Date().toISOString(),
-  };
-  saveItems([...loadItems(), entry]);
-  return entry;
-}
-
-export function removeItem(id: string): void {
-  saveItems(loadItems().filter((entry) => entry.id !== id));
-}
-
-export function pickRandom(): LunchItem | null {
+export function addItem(item: string): LunchItem[] {
+  const trimmed = item.trim();
+  if (!trimmed) return loadItems();
   const items = loadItems();
+  if (items.some((it) => it.item === trimmed)) return items;
+  const next = [...items, { item: trimmed }];
+  persist(next);
+  return next;
+}
+
+export function removeItem(item: string): LunchItem[] {
+  const next = loadItems().filter((it) => it.item !== item);
+  persist(next);
+  return next;
+}
+
+export function pickRandom(items: LunchItem[]): LunchItem | null {
   if (items.length === 0) return null;
   return items[Math.floor(Math.random() * items.length)];
 }
