@@ -143,7 +143,7 @@ export default function App() {
         ))}
       </div>
 
-      <div className="page page-fade" key={currentPage}>
+      <div className="page-fade" key={currentPage}>
         {currentPage === 'today' && <TodayPage {...snapshot} />}
         {currentPage === 'water' && <WaterTracker />}
         {currentPage === 'gacha' && <LunchGacha />}

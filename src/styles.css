@@ -373,15 +373,6 @@ body,
   50%      { box-shadow: 0 0 0 3px rgba(79, 168, 232, 0.42); }
 }
 
-.cup.drinking .cup-shape {
-  animation: cup-glug 0.5s ease;
-}
-@keyframes cup-glug {
-  0%   { transform: rotate(0); }
-  30%  { transform: rotate(-6deg); }
-  60%  { transform: rotate(4deg); }
-  100% { transform: rotate(0); }
-}
 
 .water-caption {
   margin-top: 12px;
@@ -496,14 +487,6 @@ body,
 }
 .result-window.rolling {
   color: #2e86c7;
-}
-.result-window.settle {
-  animation: result-settle 0.4s ease;
-}
-@keyframes result-settle {
-  0%   { transform: scale(0.92); }
-  55%  { transform: scale(1.05); }
-  100% { transform: scale(1); }
 }
 
 .spin-row {

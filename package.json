@@ -1,8 +1,8 @@
 {
-  "name": "moyu-calendar-widget",
+  "name": "moyu-widget",
   "version": "0.1.0",
   "private": true,
-  "description": "摸鱼日历桌面小组件 —— 基于 AKAama/moyu-calendar 抽卡片重做",
+  "description": "摸鱼桌面小组件 —— 日历 / 饮水 / 扭蛋 三页可滚轮切换，离线可用",
   "main": "electron/main.js",
   "type": "commonjs",
   "scripts": {
@@ -12,12 +12,11 @@
     "build:renderer": "tsc -b && vite build",
     "build": "npm run build:renderer && electron-builder",
     "typecheck": "tsc -b --noEmit",
-    "parse-holidays": "node tools/parse-holidays.mjs",
     "fetch-holidays": "node tools/fetch-holidays.mjs"
   },
   "build": {
-    "appId": "com.lube.moyu-calendar-widget",
-    "productName": "摸鱼日历",
+  "appId": "com.lube.moyu-widget",
+  "productName": "摸鱼小组件",
     "files": ["dist/**", "electron/**"],
     "directories": { "output": "release" },
     "win": {

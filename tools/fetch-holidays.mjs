@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // 从 timor.tech/api/holiday 拉取指定年份的法定节假日和调休数据，
-// 输出与 parse-holidays.mjs 相同格式的 TS 代码片段，可直接粘贴到 holidays.ts。
+// 输出 TS 代码片段，可直接粘贴到 src/lib/holidays.ts。
 //
 // 用法:
 //   node tools/fetch-holidays.mjs 2026                  # 拉取并打印

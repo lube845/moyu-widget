@@ -1,4 +1,3 @@
-// 本文件逻辑与 AKAama/moyu-calendar 的 src/lib/calendar.ts 保持一致：
 // 农历、干支纪年靠浏览器内置的 Intl.DateTimeFormat('zh-CN-u-ca-chinese') 计算，
 // 时间进度条靠本地时间计算，两者都不依赖任何后端接口。
 
