@@ -76,3 +76,53 @@ export function formatHolidayDate(date: string): string {
   const target = atLocalMidnight(date);
   return `${target.getMonth() + 1}月${target.getDate()}日`;
 }
+
+function daysInMonth(year: number, month: number): number {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+/** 距下次发工资的进度(0% = 刚发, 100% = 今天/明天发),clamp 到 0–100 */
+export function computePayrollProgress(now: Date, dayOfMonth: number) {
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const today = new Date(year, month, now.getDate()).getTime();
+
+  const thisMonthPayday = new Date(
+    year,
+    month,
+    Math.min(dayOfMonth, daysInMonth(year, month))
+  ).getTime();
+  const nextMonthPayday = new Date(
+    year,
+    month + 1,
+    Math.min(dayOfMonth, daysInMonth(year, month + 1))
+  ).getTime();
+  const prevMonthPayday = new Date(
+    year,
+    month - 1,
+    Math.min(dayOfMonth, daysInMonth(year, month - 1))
+  ).getTime();
+
+  let lastPayday: number;
+  let nextPayday: number;
+  if (today < thisMonthPayday) {
+    nextPayday = thisMonthPayday;
+    lastPayday = prevMonthPayday;
+  } else {
+    nextPayday = nextMonthPayday;
+    lastPayday = thisMonthPayday;
+  }
+
+  const totalPeriod = nextPayday - lastPayday;
+  const daysSinceLast = today - lastPayday;
+  const daysUntilNext = nextPayday - today;
+  const rawPercent = totalPeriod > 0 ? (daysSinceLast / totalPeriod) * 100 : 0;
+
+  return {
+    percent: Math.max(0, Math.min(100, rawPercent)),
+    daysSinceLast: Math.round(daysSinceLast / 86400000),
+    daysUntilNext: Math.round(daysUntilNext / 86400000),
+    totalDays: Math.round(totalPeriod / 86400000),
+    nextPayday: new Date(nextPayday),
+  };
+}

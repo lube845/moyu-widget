@@ -1,8 +1,36 @@
-import { useCallback, useRef, useState, type WheelEvent } from 'react';
+import { useCallback, useMemo, useRef, useState, type WheelEvent } from 'react';
 import LunchGacha from './components/LunchGacha';
 import WaterTracker from './components/WaterTracker';
 import { useCalendarSnapshot } from './lib/useCalendarStatus';
-import { formatHolidayDate } from './lib/calendar';
+import { computePayrollProgress, formatHolidayDate } from './lib/calendar';
+
+const PAYDAY_STORAGE_KEY = 'moyu-payday-day';
+const DEFAULT_PAYDAY = 15;
+
+function usePayday(): readonly [number, (day: number) => void] {
+  const [payday, setState] = useState<number>(() => {
+    try {
+      const raw = window.localStorage.getItem(PAYDAY_STORAGE_KEY);
+      if (!raw) return DEFAULT_PAYDAY;
+      const n = parseInt(raw, 10);
+      return n >= 1 && n <= 31 ? n : DEFAULT_PAYDAY;
+    } catch {
+      return DEFAULT_PAYDAY;
+    }
+  });
+
+  const setPayday = useCallback((day: number) => {
+    const clamped = Math.max(1, Math.min(31, Math.floor(day)));
+    setState(clamped);
+    try {
+      window.localStorage.setItem(PAYDAY_STORAGE_KEY, String(clamped));
+    } catch {
+      // 隐私模式或磁盘满,静默忽略
+    }
+  }, []);
+
+  return [payday, setPayday] as const;
+}
 
 declare global {
   interface Window {
@@ -40,6 +68,88 @@ function FishTankBar({ label, percent }: { label: string; percent: number }) {
   );
 }
 
+
+function PayrollBar({
+  payday,
+  info,
+  onChange,
+}: {
+  payday: number;
+  info: { percent: number };
+  onChange: (day: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(String(payday));
+
+  const startEdit = () => {
+    setDraft(String(payday));
+    setEditing(true);
+  };
+
+  const commit = () => {
+    const n = parseInt(draft, 10);
+    if (Number.isFinite(n) && n >= 1 && n <= 31) {
+      onChange(n);
+    }
+    setEditing(false);
+  };
+
+  const cancel = () => {
+    setEditing(false);
+  };
+
+  return (
+    <div className="tank-row payroll-row">
+      <span className="tank-label payroll-label">
+        {editing ? (
+          <input
+            className="payday-input no-drag"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={31}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                commit();
+              } else if (e.key === 'Escape') {
+              e.preventDefault();
+                cancel();
+              }
+            }}
+            onBlur={commit}
+            autoFocus
+            aria-label="发工资日期（每月几号）"
+          />
+        ) : (
+          <>
+            <span>发工资</span>
+            <button
+              type="button"
+              className="payday-edit-btn no-drag"
+              onClick={startEdit}
+              title="修改发工资日期"
+            >
+              {payday}日 ⚙
+            </button>
+          </>
+        )}
+      </span>
+      <div className="tank-track">
+        <div className="tank-fill" style={{ width: `${info.percent}%` }}>
+          <span className="tank-fish" aria-hidden>
+            💰
+          </span>
+        </div>
+      </div>
+      <span className="tank-percent">{info.percent.toFixed(0)}%</span>
+    </div>
+  );
+}
+
+
 function HighlightLine({ status }: { status: ReturnType<typeof useCalendarSnapshot>['status'] }) {
   if (status.isHoliday) {
     const tail = status.nextHoliday.days <= 0 ? '今天是最后一天' : `还剩 ${status.nextHoliday.days} 天`;
@@ -74,6 +184,11 @@ function TodayPage({
   progress,
   status,
 }: ReturnType<typeof useCalendarSnapshot>) {
+  const [payday, setPayday] = usePayday();
+  const payroll = useMemo(
+    () => computePayrollProgress(now, payday),
+    [now, payday]
+  );
   const dateLabel = `${now.getMonth() + 1}月${now.getDate()}日`;
   return (
     <>
@@ -93,11 +208,13 @@ function TodayPage({
         <FishTankBar label="本周" percent={progress.week} />
         <FishTankBar label="本月" percent={progress.month} />
         <FishTankBar label="本年" percent={progress.year} />
+        <PayrollBar payday={payday} info={payroll} onChange={setPayday} />
       </div>
 
       <div className="footer">
         本月工作日 {status.monthlyWorkdays} 天
         {status.isTransferWorkday ? ' · 今天是调休上班日' : ''}
+        {` · 下次发工资 ${payroll.nextPayday.getMonth() + 1}月${payroll.nextPayday.getDate()}日（还剩 ${payroll.daysUntilNext} 天）`}
         {status.nextHoliday.start !== status.nextHoliday.end
           ? ` · 「${status.nextHoliday.name}」${formatHolidayDate(status.nextHoliday.start)}–${formatHolidayDate(status.nextHoliday.end)}`
           : ''}

@@ -4,8 +4,7 @@ const fs = require('node:fs');
 
 const isDev = !app.isPackaged;
 const BOUNDS_FILE = path.join(app.getPath('userData'), 'window-bounds.json');
-const CARD_SIZE = { width: 280, height: 260 };
-
+const CARD_SIZE = { width: 280, height: 380 };
 /** @type {BrowserWindow | null} */
 let win = null;
 let alwaysOnTop = true;

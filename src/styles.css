@@ -22,18 +22,10 @@ body,
   user-select: none;
 }
 
-.drag-region {
-  -webkit-app-region: drag;
-}
-
-.no-drag {
-  -webkit-app-region: no-drag;
-}
-
 .card {
   position: relative;
   width: 280px;
-  padding: 20px 22px 16px;
+  height: 380px;
   background: #fbf6ec;
   border: 1px solid rgba(58, 54, 46, 0.08);
   border-radius: 20px;
@@ -41,6 +33,9 @@ body,
     0 12px 28px rgba(58, 54, 46, 0.16),
     0 2px 6px rgba(58, 54, 46, 0.08);
   color: #3a362e;
+  /* 固定高度让三页 (日历 / 饮水 / 扭蛋) 渲染出来视觉大小一致;
+     内容溢出时裁掉,避免突破 border-radius 的圆角 */
+  overflow: hidden;
 }
 
 .close-btn {
@@ -131,6 +126,9 @@ body,
   gap: 8px;
 }
 
+.tank-row.payroll-row {
+  grid-template-columns: auto 1fr 34px;
+}
 .tank-label {
   font-size: 11px;
   color: #8b8477;
@@ -152,6 +150,60 @@ body,
   background-size: 200% 100%;
   animation: tank-shimmer 5s ease-in-out infinite;
   transition: width 0.6s ease;
+}
+
+.tank-row.payroll-row .tank-label {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.payday-edit-btn {
+  border: none;
+  background: transparent;
+  color: #8b8477;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 1px 5px;
+  border-radius: 4px;
+  opacity: 0.7;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.payday-edit-btn:hover {
+  opacity: 1;
+  background: rgba(58, 54, 46, 0.08);
+}
+.payday-edit-btn:focus-visible {
+  outline: 2px solid #4fa8e8;
+  outline-offset: 1px;
+}
+
+.payday-input {
+  width: 38px;
+  border: 1px solid #4fa8e8;
+  border-radius: 4px;
+  padding: 1px 4px;
+  font: inherit;
+  font-size: 11px;
+  text-align: center;
+  background: #fff;
+  color: #3a362e;
+  outline: none;
+  /* 去掉 number 输入的 spinner,保持紧凑 */
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.payday-input::-webkit-outer-spin-button,
+.payday-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.payday-input:focus-visible {
+  outline: 2px solid #4fa8e8;
+  outline-offset: 1px;
 }
 
 @keyframes tank-shimmer {
