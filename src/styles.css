@@ -421,36 +421,41 @@ body,
   letter-spacing: 0.6px;
 }
 
-.title-right {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
 
 .lunch-pool-count {
-  font-size: 9.5px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #5b7f5a;
+}
+.lunch-subtitle {
+  margin: 9px 0 0;
+  font-size: 13.5px;
   color: #8b8477;
+  line-height: 1.5;
 }
 
 .manage-toggle {
+  position: absolute;
+  top: 16px;
+  right: 20px;
   border: none;
   background: transparent;
   color: #8b8477;
   font: inherit;
-  font-size: 9.5px;
-  font-weight: 700;
+  font-size: 13px;
   cursor: pointer;
   padding: 2px 6px;
-  border-radius: 5px;
-  transition: background 0.15s ease, color 0.15s ease;
+  border-radius: 6px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease, background 0.2s ease;
 }
 .manage-toggle:hover {
-  background: rgba(58, 54, 46, 0.08);
-  color: #3a362e;
-}
+  opacity: 1;
+  background: rgba(58, 54, 46, 0.06);
 .manage-toggle:focus-visible {
   outline: 2px solid #4fa8e8;
   outline-offset: 2px;
+}
 }
 
 /* ============ Spin 视图 ============ */
@@ -488,6 +493,14 @@ body,
 .result-window.rolling {
   color: #2e86c7;
 }
+.result-window.settle {
+  animation: settle-bounce 0.4s ease;
+}
+@keyframes settle-bounce {
+  0%   { transform: scale(0.9); }
+  55%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+
 
 .spin-row {
   display: flex;

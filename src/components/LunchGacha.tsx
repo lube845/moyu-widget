@@ -10,6 +10,7 @@ export default function LunchGacha() {
   const [inManage, setInManage] = useState(false);
   const [newOption, setNewOption] = useState('');
   const [spinning, setSpinning] = useState(false);
+  const [settling, setSettling] = useState(false);
   const [displayItem, setDisplayItem] = useState<LunchItem | null>(null);
   const [spinCount, setSpinCount] = useState(0);
 
@@ -20,6 +21,10 @@ export default function LunchGacha() {
     e.preventDefault();
     const trimmed = newOption.trim();
     if (!trimmed) return;
+    if (items.some((it) => it.item === trimmed)) {
+      setNewOption('');
+      return;
+    }
     setItems(addItem(trimmed));
     setNewOption('');
   };
@@ -30,53 +35,76 @@ export default function LunchGacha() {
     if (lastPickRef.current === item) lastPickRef.current = null;
   };
 
+  // HTML 原型里的 pickRandom:选项 ≥2 时无条件避开上一个,没有重试上限
+  const pickAvoidingLast = (): LunchItem => {
+    if (items.length === 1) return items[0];
+    let choice = pickRandom(items);
+    while (choice?.item === lastPickRef.current) {
+      choice = pickRandom(items);
+    }
+    return choice!;
+  };
+
   const spin = () => {
     if (spinning || items.length === 0) return;
     setSpinning(true);
-
-    // ≥2 个选项时,避免连续两次都扭到同一个
-    let pick = pickRandom(items);
-    if (items.length >= 2) {
-      let tries = 0;
-      while (pick?.item === lastPickRef.current && tries < 8) {
-        pick = pickRandom(items);
-        tries++;
-      }
-    }
-    const finalPick = pick;
+    setSettling(false);
+    const finalPick = pickAvoidingLast();
 
     stepRef.current = 0;
     const tick = () => {
       stepRef.current++;
-      const random = pickRandom(items);
-      setDisplayItem(random);
+      setDisplayItem(pickRandom(items));
       if (stepRef.current < ROLLING_STEPS) {
-        setTimeout(tick, ROLLING_BASE_MS + stepRef.current * ROLLING_STEP_MS);
+        window.setTimeout(tick, ROLLING_BASE_MS + stepRef.current * ROLLING_STEP_MS);
       } else {
+        // 落定:跟 HTML 原型一样,先显示 finalPick、加 .settle 类,400ms 后移除
         setDisplayItem(finalPick);
         setSpinning(false);
+        setSettling(true);
         setSpinCount((c) => c + 1);
-        if (finalPick) lastPickRef.current = finalPick.item;
+        lastPickRef.current = finalPick.item;
+        window.setTimeout(() => setSettling(false), 400);
       }
     };
     tick();
   };
 
+  const resultClass =
+    `result-window` +
+    (!displayItem && !spinning ? ' idle' : '') +
+    (spinning ? ' rolling' : '') +
+    (settling ? ' settle' : '');
+
+  const caption =
+    inManage
+      ? '点 × 删除选项，至少保留 1 个'
+      : spinCount > 0
+        ? `今天已经扭了 ${spinCount} 次`
+        : '还没扭过，点下面的按钮试试';
+
   return (
     <section className="lunch-section">
       <header className="lunch-title-row">
-        <span className="lunch-title">午饭扭蛋</span>
-        <div className="title-right">
-          <span className="lunch-pool-count">共 {items.length} 选</span>
-          <button
-            type="button"
-            className="manage-toggle no-drag"
-            onClick={() => setInManage((v) => !v)}
-          >
-            {inManage ? '‹ 返回' : '✎ 管理'}
-          </button>
-        </div>
+        <span className="lunch-title">午餐扭蛋</span>
+        <span className="lunch-pool-count">共 {items.length} 个选项</span>
       </header>
+      <p className="lunch-subtitle">
+        {inManage
+          ? '编辑你的午餐选项库'
+          : '选择困难症终结者 · 扭一下，让命运替你点餐'}
+      </p>
+
+      <button
+        type="button"
+        className="manage-toggle no-drag"
+        onClick={() => setInManage((v) => !v)}
+        title="管理午餐选项"
+      >
+        {inManage ? '‹ 返回' : '✎ 管理'}
+      </button>
+
+      <div className="divider" />
 
       {inManage ? (
         <div className="manage-view">
@@ -102,7 +130,7 @@ export default function LunchGacha() {
               className="no-drag"
               value={newOption}
               onChange={(e) => setNewOption(e.target.value)}
-              placeholder="新选项，例如 沙县小吃"
+              placeholder="新选项，比如 沙县小吃"
               maxLength={12}
               aria-label="新选项"
             />
@@ -111,14 +139,8 @@ export default function LunchGacha() {
         </div>
       ) : (
         <div className="spin-view">
-          <div
-            className={
-              `result-window` +
-              (!displayItem && !spinning ? ' idle' : '') +
-              (spinning ? ' rolling' : '')
-            }
-          >
-            {spinning ? '' : (displayItem?.item || '扭一下试试看')}
+          <div className={resultClass}>
+            {spinning || displayItem ? displayItem?.item : '扭一下试试看'}
           </div>
           <div className="spin-row">
             <button
@@ -128,19 +150,13 @@ export default function LunchGacha() {
               disabled={items.length === 0}
               aria-label="扭一下"
             >
-              {spinning ? '扭动中' : '扭一下'}
+              扭一下
             </button>
           </div>
         </div>
       )}
 
-      <p className="lunch-caption">
-        {inManage
-          ? '点 × 删除选项，至少保留 1 个'
-          : spinCount > 0 && displayItem
-            ? `今天已扭 ${spinCount} 次 · 这顿：${displayItem.item}`
-            : '还没扭过，点下面的按钮试试'}
-      </p>
+      <p className="lunch-caption">{caption}</p>
     </section>
   );
 }

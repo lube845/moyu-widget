@@ -108,7 +108,6 @@ function createWindow() {
 ipcMain.on('widget:close', () => {
   app.quit();
 });
-});
 
 app.whenReady().then(createWindow);
 

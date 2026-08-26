@@ -7,15 +7,15 @@ export interface LunchItem {
 }
 
 const SEED_ITEMS: string[] = [
-  '老乡鸡',
-  '兰州拉面',
-  '麦当劳',
-  '黄焖鸡米饭',
-  '沙县小吃',
+  '黄焖鸡',
   '麻辣烫',
-  '饺子',
-  '冒菜',
+  '肯德基',
+  '兰州拉面',
+  '沙县小吃',
+  '盖浇饭',
+  '日式便当',
   '米线',
+  '汉堡',
 ];
 
 function safeParse(raw: string | null): string[] | null {
