@@ -126,3 +126,38 @@ export function computePayrollProgress(now: Date, dayOfMonth: number) {
     nextPayday: new Date(nextPayday),
   };
 }
+
+/** 距下次下班的进度(0% = 刚下班, 100% = 即将下班),24 小时一周期 */
+export function computeOffworkProgress(now: Date, hour: number, minute: number) {
+  const todayOffwork = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    hour,
+    minute
+  ).getTime();
+  const tomorrowOffwork = todayOffwork + 86400000;
+  const yesterdayOffwork = todayOffwork - 86400000;
+
+  let lastOffwork: number;
+  let nextOffwork: number;
+  if (now.getTime() < todayOffwork) {
+    nextOffwork = todayOffwork;
+    lastOffwork = yesterdayOffwork;
+  } else {
+    nextOffwork = tomorrowOffwork;
+    lastOffwork = todayOffwork;
+  }
+
+  const totalPeriod = nextOffwork - lastOffwork; // 恒为 86400000
+  const msSinceLast = now.getTime() - lastOffwork;
+  const msUntilNext = nextOffwork - now.getTime();
+  const rawPercent = totalPeriod > 0 ? (msSinceLast / totalPeriod) * 100 : 0;
+
+  return {
+    percent: Math.max(0, Math.min(100, rawPercent)),
+    minutesUntilNext: Math.round(msUntilNext / 60000),
+    hoursUntilNext: msUntilNext / 3600000,
+    nextOffwork: new Date(nextOffwork),
+  };
+}

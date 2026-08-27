@@ -6,6 +6,14 @@
   box-sizing: border-box;
 }
 
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
 html,
 body,
 #root {
@@ -25,7 +33,8 @@ body,
 .card {
   position: relative;
   width: 280px;
-  height: 380px;
+  height: 320px;
+  padding: 18px 22px 14px;
   background: #fbf6ec;
   border: 1px solid rgba(58, 54, 46, 0.08);
   border-radius: 20px;
@@ -36,32 +45,6 @@ body,
   /* 固定高度让三页 (日历 / 饮水 / 扭蛋) 渲染出来视觉大小一致;
      内容溢出时裁掉,避免突破 border-radius 的圆角 */
   overflow: hidden;
-}
-
-.close-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  border: none;
-  background: rgba(58, 54, 46, 0.08);
-  color: #8b8477;
-  font-size: 15px;
-  line-height: 1;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.card:hover .close-btn {
-  opacity: 1;
-}
-
-.close-btn:hover {
-  background: #c97b84;
-  color: #fff;
 }
 
 .header {
@@ -84,7 +67,7 @@ body,
 }
 
 .lunar {
-  margin-top: 2px;
+  margin-top: 0;
   font-size: 12px;
   color: #8b8477;
   letter-spacing: 0.3px;
@@ -92,7 +75,7 @@ body,
 
 .divider {
   height: 1px;
-  margin: 14px 0 12px;
+  margin: 8px 0 6px;
   background: linear-gradient(
     to right,
     rgba(58, 54, 46, 0.12),
@@ -101,7 +84,7 @@ body,
 }
 
 .highlight {
-  margin: 0 0 14px;
+  margin: 0 0 8px;
   font-size: 13px;
   line-height: 1.6;
   color: #3a362e;
@@ -116,7 +99,7 @@ body,
 .tanks {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .tank-row {
@@ -150,6 +133,15 @@ body,
   background-size: 200% 100%;
   animation: tank-shimmer 5s ease-in-out infinite;
   transition: width 0.6s ease;
+}
+
+/* 发工资 — 金色 */
+.tank-row.payroll-row .tank-fill {
+  background: linear-gradient(90deg, #e6c66c, #c9a227);
+}
+/* 下班 — 橙色（公文包 emoji 跟橙色梯度更搭） */
+.tank-row.offwork-row .tank-fill {
+  background: linear-gradient(90deg, #f3b968, #e08e45);
 }
 
 .tank-row.payroll-row .tank-label {
@@ -206,6 +198,13 @@ body,
   outline-offset: 1px;
 }
 
+/* type="time" 浏览器内置 padding/spinner 跟数字 input 不一样,这里强制统一 */
+.payday-input[type="time"] {
+  width: 70px;
+  text-align: center;
+  padding: 2px 4px;
+}
+
 @keyframes tank-shimmer {
   0% {
     background-position: 0% 50%;
@@ -233,12 +232,6 @@ body,
   text-align: right;
 }
 
-.footer {
-  margin-top: 14px;
-  font-size: 10.5px;
-  color: #a8a196;
-  line-height: 1.5;
-}
 /* ====================================================================== */
 /* 翻页:页面指示点 + 翻页淡入动画                                          */
 /* ====================================================================== */
@@ -286,27 +279,25 @@ body,
   padding-top: 0;
 }
 
-.water-header-right {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
 .water-reset {
+  position: absolute;
+  top: 16px;
+  right: 20px;
   border: none;
   background: transparent;
   color: #8b8477;
   font: inherit;
-  font-size: 11px;
+  font-size: 13px;
   cursor: pointer;
-  padding: 1px 5px;
-  border-radius: 4px;
+  padding: 2px 6px;
+  border-radius: 6px;
   opacity: 0.55;
-  transition: opacity 0.15s ease, background 0.15s ease;
+  transition: opacity 0.2s ease, background 0.2s ease;
+  z-index: 2;
 }
 .water-reset:hover {
   opacity: 1;
-  background: rgba(58, 54, 46, 0.08);
+  background: rgba(58, 54, 46, 0.06);
 }
 .water-reset:focus-visible {
   outline: 2px solid #4fa8e8;
@@ -314,7 +305,7 @@ body,
 }
 
 .water-subtitle {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   font-size: 11px;
   color: #8b8477;
   line-height: 1.4;
@@ -329,14 +320,14 @@ body,
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  gap: 5px;
-  margin: 6px 0 14px;
+  gap: 4px;
+  margin: 6px 0 8px;
 }
 
 .cup {
   position: relative;
-  width: 24px;
-  height: 38px;
+  width: 28px;
+  height: 42px;
   padding: 0;
   background: transparent;
   border: none;
@@ -354,9 +345,9 @@ body,
 .cup-shape {
   position: absolute;
   inset: 0;
-  border: 1.5px solid #2e86c7;
-  border-radius: 2px 2px 5px 5px;
-  clip-path: polygon(15% 0%, 85% 0%, 100% 100%, 0% 100%);
+  border: 2px solid #2e86c7;
+  border-radius: 3px 3px 7px 7px;
+  clip-path: polygon(12% 0%, 88% 0%, 100% 100%, 0% 100%);
   overflow: hidden;
   background: rgba(79, 168, 232, 0.06);
   transition:
@@ -372,7 +363,7 @@ body,
   bottom: -2px;
   height: 0%;
   background: linear-gradient(180deg, #7cc1f0, #4fa8e8);
-  transition: height 0.6s cubic-bezier(0.45, 0, 0.2, 1);
+  transition: height 0.7s cubic-bezier(0.45, 0, 0.2, 1);
 }
 .cup .liquid::after {
   content: '';
@@ -380,26 +371,30 @@ body,
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.42);
+  height: 4px;
+  background: rgba(255, 255, 255, 0.4);
 }
 
 /* 桌面投影，给杯子一点落地感 */
 .cup::after {
   content: '';
   position: absolute;
-  left: 14%;
-  right: 14%;
-  bottom: -4px;
-  height: 3px;
-  background: radial-gradient(ellipse at center, rgba(58, 54, 46, 0.16), transparent 70%);
+  left: 10%;
+  right: 10%;
+  bottom: -5px;
+  height: 4px;
+  background: radial-gradient(ellipse at center, rgba(58, 54, 46, 0.14), transparent 70%);
   pointer-events: none;
 }
 
-/* States */
+/* States —— 没喝是满杯,喝了变空杯(跟 HTML 原型一致) */
+.cup.state-next .liquid,
+.cup.state-locked .liquid {
+  height: 100%;
+}
 .cup.state-done .liquid,
 .cup.state-undoable .liquid {
-  height: 100%;
+  height: 0%;
 }
 
 .cup.state-next .cup-shape {
@@ -417,17 +412,47 @@ body,
 
 .cup.state-next:hover:not(:disabled) .cup-shape,
 .cup.state-undoable:hover:not(:disabled) .cup-shape {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+}
+
+/* 点击下一杯:杯子摇摆一下 */
+.cup.drinking .cup-shape {
+  animation: cup-glug 0.5s ease;
+}
+@keyframes cup-glug {
+  0%   { transform: rotate(0); }
+  30%  { transform: rotate(-9deg); }
+  60%  { transform: rotate(5deg); }
+  100% { transform: rotate(0); }
+}
+
+/* "+1杯 💧" 上浮文字 */
+.floater {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 700;
+  color: #2e86c7;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: cup-float-up 0.9s ease forwards;
+}
+@keyframes cup-float-up {
+  0%   { opacity: 0; transform: translate(-50%, 6px); }
+  20%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -24px); }
 }
 
 @keyframes cup-next-pulse {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(79, 168, 232, 0.22); }
-  50%      { box-shadow: 0 0 0 3px rgba(79, 168, 232, 0.42); }
+  0%, 100% { box-shadow: 0 0 0 3px rgba(79, 168, 232, 0.22); }
+  50%      { box-shadow: 0 0 0 5px rgba(79, 168, 232, 0.42); }
 }
 
 
 .water-caption {
-  margin-top: 12px;
+  margin-top: 8px;
   font-size: 10px;
   color: #a8a196;
   line-height: 1.4;
@@ -436,7 +461,8 @@ body,
 @media (prefers-reduced-motion: reduce) {
   .cup,
   .cup-shape,
-  .liquid {
+  .liquid,
+  .floater {
     animation: none !important;
     transition: none !important;
   }
@@ -451,8 +477,6 @@ body,
   align-items: stretch;
   gap: 8px;
   padding-top: 0;
-  /* 内容高度总和 ~240,留 ~30px 缓冲;chip 列表自带滚动 */
-  max-height: 260px;
   overflow: visible;
   scrollbar-width: none;
 }
@@ -479,12 +503,6 @@ body,
   font-weight: 600;
   color: #5b7f5a;
 }
-.lunch-subtitle {
-  margin: 9px 0 0;
-  font-size: 13.5px;
-  color: #8b8477;
-  line-height: 1.5;
-}
 
 .manage-toggle {
   position: absolute;
@@ -504,10 +522,10 @@ body,
 .manage-toggle:hover {
   opacity: 1;
   background: rgba(58, 54, 46, 0.06);
+}
 .manage-toggle:focus-visible {
   outline: 2px solid #4fa8e8;
   outline-offset: 2px;
-}
 }
 
 /* ============ Spin 视图 ============ */
@@ -516,21 +534,21 @@ body,
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   margin-top: 4px;
 }
 
 .result-window {
   width: 100%;
-  min-height: 52px;
+  min-height: 56px;
   background: #efe7d8;
-  border: 1px solid rgba(58, 54, 46, 0.08);
+  border: 1px solid rgba(58, 54, 46, 0.06);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
-  font-size: 17px;
+  padding: 8px 14px;
+  font-size: 18px;
   font-weight: 800;
   color: #3a362e;
   text-align: center;
@@ -540,7 +558,7 @@ body,
 .result-window.idle {
   color: #a8a196;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 14px;
 }
 .result-window.rolling {
   color: #2e86c7;
@@ -552,27 +570,28 @@ body,
   0%   { transform: scale(0.9); }
   55%  { transform: scale(1.06); }
   100% { transform: scale(1); }
-
+}
 
 .spin-row {
   display: flex;
   justify-content: center;
+  margin: 12px 0 8px;
 }
 
 .spin-btn {
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   border: none;
   cursor: pointer;
   background: linear-gradient(145deg, #f3b968, #e08e45);
   color: #fff;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   line-height: 1.2;
   box-shadow:
-    0 5px 12px rgba(224, 142, 69, 0.4),
+    0 4px 10px rgba(224, 142, 69, 0.4),
     inset 0 -3px 6px rgba(0, 0, 0, 0.08);
   transition:
     transform 0.15s ease,
@@ -586,11 +605,11 @@ body,
   transform: translateY(1px) scale(0.97);
 }
 .spin-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  opacity: 0.7;
+  cursor: default;
 }
 .spin-btn.spinning {
-  animation: btn-spin 0.6s linear infinite;
+  animation: btn-spin 0.6s ease;
 }
 .spin-btn:focus-visible {
   outline: 2px solid #4fa8e8;
@@ -614,10 +633,10 @@ body,
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  gap: 6px;
+  gap: 8px;
   max-height: 140px;
   overflow-y: auto;
-  padding: 2px;
+  padding: 2px 2px 4px;
   scrollbar-width: none;
 }
 .chip-list::-webkit-scrollbar { display: none; }
@@ -625,13 +644,13 @@ body,
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   background: #efe7d8;
   color: #3a362e;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  padding: 4px 4px 4px 10px;
-  border-radius: 14px;
+  padding: 6px 6px 6px 12px;
+  border-radius: 16px;
   line-height: 1.2;
 }
 
@@ -640,13 +659,13 @@ body,
 }
 
 .chip-del {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   border: none;
-  background: rgba(58, 54, 46, 0.15);
+  background: rgba(58, 54, 46, 0.12);
   color: #3a362e;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1;
   cursor: pointer;
   display: flex;
@@ -669,16 +688,17 @@ body,
 
 .add-row {
   display: flex;
-  gap: 6px;
+  gap: 8px;
+  margin-top: 14px;
 }
 
 .add-row input {
   flex: 1;
-  border: 1px solid rgba(58, 54, 46, 0.18);
-  border-radius: 8px;
-  padding: 7px 10px;
+  border: 1px solid rgba(58, 54, 46, 0.15);
+  border-radius: 10px;
+  padding: 9px 12px;
   font: inherit;
-  font-size: 12px;
+  font-size: 13.5px;
   background: #fff;
   color: #3a362e;
   outline: none;
@@ -691,31 +711,30 @@ body,
 
 .add-btn {
   border: none;
-  border-radius: 8px;
-  padding: 0 14px;
+  border-radius: 10px;
+  padding: 0 16px;
   flex-shrink: 0;
-  background: linear-gradient(180deg, #6c8e70, #5b7f5a);
+  background: var(--fill-green, #6c8e70);
   color: #fff;
   font: inherit;
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 2px 0 #4a6a48;
   transition: transform 0.1s ease, filter 0.15s ease;
 }
 .add-btn:hover {
   filter: brightness(1.06);
 }
-.add-btn:active {
-  transform: translateY(1px);
-  box-shadow: 0 1px 0 #4a6a48;
+.add-btn:focus-visible {
+  outline: 2px solid #4fa8e8;
+  outline-offset: 2px;
 }
 
 .lunch-caption {
-  margin: 4px 0 0;
-  font-size: 10px;
+  margin-top: 8px;
+  font-size: 12px;
   color: #a8a196;
-  line-height: 1.4;
+  line-height: 1.5;
   text-align: center;
 }
 

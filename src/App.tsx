@@ -2,10 +2,17 @@ import { useCallback, useMemo, useRef, useState, type WheelEvent } from 'react';
 import LunchGacha from './components/LunchGacha';
 import WaterTracker from './components/WaterTracker';
 import { useCalendarSnapshot } from './lib/useCalendarStatus';
-import { computePayrollProgress, formatHolidayDate } from './lib/calendar';
+import { computeOffworkProgress, computePayrollProgress } from './lib/calendar';
 
 const PAYDAY_STORAGE_KEY = 'moyu-payday-day';
 const DEFAULT_PAYDAY = 15;
+const OFFWORK_STORAGE_KEY = 'moyu-offwork-time';
+const DEFAULT_OFFWORK = { hour: 17, minute: 30 };
+
+interface OffworkTime {
+  hour: number;
+  minute: number;
+}
 
 function usePayday(): readonly [number, (day: number) => void] {
   const [payday, setState] = useState<number>(() => {
@@ -32,12 +39,48 @@ function usePayday(): readonly [number, (day: number) => void] {
   return [payday, setPayday] as const;
 }
 
-declare global {
-  interface Window {
-    widgetAPI?: {
-      close: () => void;
-    };
-  }
+function pad2(n: number): string {
+  return n < 10 ? `0${n}` : String(n);
+}
+
+function parseHHMM(value: string): OffworkTime | null {
+  const match = value.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  const h = parseInt(match[1], 10);
+  const m = parseInt(match[2], 10);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+  if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+  return { hour: h, minute: m };
+}
+
+function useOffwork(): readonly [OffworkTime, (t: OffworkTime) => void] {
+  const [offwork, setState] = useState<OffworkTime>(() => {
+    try {
+      const raw = window.localStorage.getItem(OFFWORK_STORAGE_KEY);
+      if (raw) {
+        const parsed = parseHHMM(raw);
+        if (parsed) return parsed;
+      }
+    } catch {
+      // 隐私模式或磁盘满,fallback 到默认
+    }
+    return DEFAULT_OFFWORK;
+  });
+
+  const setOffwork = useCallback((t: OffworkTime) => {
+    const next = { hour: t.hour, minute: t.minute };
+    setState(next);
+    try {
+      window.localStorage.setItem(
+        OFFWORK_STORAGE_KEY,
+        `${pad2(next.hour)}:${pad2(next.minute)}`
+      );
+    } catch {
+      // 静默忽略
+    }
+  }, []);
+
+  return [offwork, setOffwork] as const;
 }
 
 const PAGES = [
@@ -115,7 +158,7 @@ function PayrollBar({
                 e.preventDefault();
                 commit();
               } else if (e.key === 'Escape') {
-              e.preventDefault();
+                e.preventDefault();
                 cancel();
               }
             }}
@@ -145,6 +188,93 @@ function PayrollBar({
         </div>
       </div>
       <span className="tank-percent">{info.percent.toFixed(0)}%</span>
+    </div>
+  );
+}
+
+
+function OffworkBar({
+  offwork,
+  info,
+  onChange,
+}: {
+  offwork: OffworkTime;
+  info: { percent: number; hoursUntilNext: number; minutesUntilNext: number };
+  onChange: (t: OffworkTime) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(`${pad2(offwork.hour)}:${pad2(offwork.minute)}`);
+
+  const startEdit = () => {
+    setDraft(`${pad2(offwork.hour)}:${pad2(offwork.minute)}`);
+    setEditing(true);
+  };
+
+  const commit = () => {
+    const parsed = parseHHMM(draft);
+    if (parsed) onChange(parsed);
+    setEditing(false);
+  };
+
+  const cancel = () => {
+    setEditing(false);
+  };
+
+  const hhmm = `${pad2(offwork.hour)}:${pad2(offwork.minute)}`;
+
+  // 倒计时显示:>= 1h 显示「Xh Ym」;< 1h 显示「Y 分钟」
+  const countdown =
+    info.hoursUntilNext >= 1
+      ? `${Math.floor(info.hoursUntilNext)}h ${info.minutesUntilNext % 60}m`
+      : `${info.minutesUntilNext} 分钟`;
+
+  return (
+    <div className="tank-row payroll-row offwork-row">
+      <span className="tank-label payroll-label">
+        {editing ? (
+          <input
+            className="payday-input no-drag"
+            type="time"
+            value={draft}
+            step={300}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                commit();
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cancel();
+              }
+            }}
+            onBlur={commit}
+            autoFocus
+            aria-label="下班时间"
+          />
+        ) : (
+          <>
+            <span>下班</span>
+            <button
+              type="button"
+              className="payday-edit-btn no-drag"
+              onClick={startEdit}
+              title="修改下班时间"
+            >
+              {hhmm} ⚙
+            </button>
+          </>
+        )}
+      </span>
+      <div className="tank-track">
+        <div className="tank-fill" style={{ width: `${info.percent}%` }}>
+          <span className="tank-fish" aria-hidden>
+            💼
+          </span>
+        </div>
+      </div>
+      <span className="tank-percent" title={countdown}>
+        {info.percent.toFixed(0)}%
+      </span>
     </div>
   );
 }
@@ -189,6 +319,11 @@ function TodayPage({
     () => computePayrollProgress(now, payday),
     [now, payday]
   );
+  const [offwork, setOffwork] = useOffwork();
+  const offworkInfo = useMemo(
+    () => computeOffworkProgress(now, offwork.hour, offwork.minute),
+    [now, offwork]
+  );
   const dateLabel = `${now.getMonth() + 1}月${now.getDate()}日`;
   return (
     <>
@@ -208,16 +343,8 @@ function TodayPage({
         <FishTankBar label="本周" percent={progress.week} />
         <FishTankBar label="本月" percent={progress.month} />
         <FishTankBar label="本年" percent={progress.year} />
+        <OffworkBar offwork={offwork} info={offworkInfo} onChange={setOffwork} />
         <PayrollBar payday={payday} info={payroll} onChange={setPayday} />
-      </div>
-
-      <div className="footer">
-        本月工作日 {status.monthlyWorkdays} 天
-        {status.isTransferWorkday ? ' · 今天是调休上班日' : ''}
-        {` · 下次发工资 ${payroll.nextPayday.getMonth() + 1}月${payroll.nextPayday.getDate()}日（还剩 ${payroll.daysUntilNext} 天）`}
-        {status.nextHoliday.start !== status.nextHoliday.end
-          ? ` · 「${status.nextHoliday.name}」${formatHolidayDate(status.nextHoliday.start)}–${formatHolidayDate(status.nextHoliday.end)}`
-          : ''}
       </div>
     </>
   );
@@ -246,14 +373,6 @@ export default function App() {
 
   return (
     <div className="card drag-region" onWheel={handleWheel}>
-      <button
-        className="close-btn no-drag"
-        title="退出"
-        onClick={() => window.widgetAPI?.close()}
-      >
-        ×
-      </button>
-
       <div className="page-dots no-drag" aria-hidden>
         {PAGES.map((page, index) => (
           <span key={page.key} className={`page-dot${index === pageIndex ? ' active' : ''}`} />

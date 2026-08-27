@@ -1,10 +1,10 @@
-const { app, BrowserWindow, Menu, screen, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, screen } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 
 const isDev = !app.isPackaged;
 const BOUNDS_FILE = path.join(app.getPath('userData'), 'window-bounds.json');
-const CARD_SIZE = { width: 280, height: 380 };
+const CARD_SIZE = { width: 280, height: 320 };
 /** @type {BrowserWindow | null} */
 let win = null;
 let alwaysOnTop = true;
@@ -59,7 +59,6 @@ function createWindow() {
     maximizable: false,
     minimizable: false,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -103,10 +102,6 @@ function createWindow() {
     menu.popup();
   });
 }
-
-ipcMain.on('widget:close', () => {
-  app.quit();
-});
 
 app.whenReady().then(createWindow);
 

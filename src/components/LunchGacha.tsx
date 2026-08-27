@@ -15,7 +15,7 @@ export default function LunchGacha() {
   const [spinCount, setSpinCount] = useState(0);
 
   const stepRef = useRef(0);
-  const lastPickRef = useRef<string | null>(null);
+  const [lastPick, setLastPick] = useState<string | null>(null);
 
   const handleAdd = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -32,14 +32,14 @@ export default function LunchGacha() {
   const handleDelete = (item: string) => {
     if (items.length <= 1) return; // 至少保留 1 个
     setItems(removeItem(item));
-    if (lastPickRef.current === item) lastPickRef.current = null;
+    if (lastPick === item) setLastPick(null);
   };
 
   // HTML 原型里的 pickRandom:选项 ≥2 时无条件避开上一个,没有重试上限
   const pickAvoidingLast = (): LunchItem => {
     if (items.length === 1) return items[0];
     let choice = pickRandom(items);
-    while (choice?.item === lastPickRef.current) {
+    while (choice?.item === lastPick) {
       choice = pickRandom(items);
     }
     return choice!;
@@ -63,7 +63,7 @@ export default function LunchGacha() {
         setSpinning(false);
         setSettling(true);
         setSpinCount((c) => c + 1);
-        lastPickRef.current = finalPick.item;
+        setLastPick(finalPick.item);
         window.setTimeout(() => setSettling(false), 400);
       }
     };
@@ -79,8 +79,8 @@ export default function LunchGacha() {
   const caption =
     inManage
       ? '点 × 删除选项，至少保留 1 个'
-      : spinCount > 0
-        ? `今天已经扭了 ${spinCount} 次`
+      : lastPick
+        ? `今天已经扭了 ${spinCount} 次 · 这顿：${lastPick}`
         : '还没扭过，点下面的按钮试试';
 
   return (
@@ -89,11 +89,6 @@ export default function LunchGacha() {
         <span className="lunch-title">午餐扭蛋</span>
         <span className="lunch-pool-count">共 {items.length} 个选项</span>
       </header>
-      <p className="lunch-subtitle">
-        {inManage
-          ? '编辑你的午餐选项库'
-          : '选择困难症终结者 · 扭一下，让命运替你点餐'}
-      </p>
 
       <button
         type="button"
