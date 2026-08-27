@@ -1,4 +1,12 @@
-import { useCallback, useMemo, useRef, useState, type WheelEvent } from 'react';
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type WheelEvent as ReactWheelEvent,
+} from 'react';
+import DailyQuote from './components/DailyQuote';
 import LunchGacha from './components/LunchGacha';
 import WaterTracker from './components/WaterTracker';
 import { useCalendarSnapshot } from './lib/useCalendarStatus';
@@ -87,12 +95,10 @@ const PAGES = [
   { key: 'today', label: '日历' },
   { key: 'water', label: '饮水' },
   { key: 'gacha', label: '扭蛋' },
+  { key: 'quote', label: '一言' },
 ] as const;
 
 type PageKey = (typeof PAGES)[number]['key'];
-
-/** 把 wheel 节流到 ~300ms 一次 —— 一次拨轮会触发 N 次 wheel,全响应会飞过去 */
-const WHEEL_COOLDOWN_MS = 300;
 
 function FishTankBar({ label, percent }: { label: string; percent: number }) {
   const clamped = Math.min(100, Math.max(0, percent));
@@ -340,11 +346,11 @@ function TodayPage({
       <HighlightLine status={status} />
 
       <div className="tanks">
+        <OffworkBar offwork={offwork} info={offworkInfo} onChange={setOffwork} />
+        <PayrollBar payday={payday} info={payroll} onChange={setPayday} />
         <FishTankBar label="本周" percent={progress.week} />
         <FishTankBar label="本月" percent={progress.month} />
         <FishTankBar label="本年" percent={progress.year} />
-        <OffworkBar offwork={offwork} info={offworkInfo} onChange={setOffwork} />
-        <PayrollBar payday={payday} info={payroll} onChange={setPayday} />
       </div>
     </>
   );
@@ -353,37 +359,131 @@ function TodayPage({
 export default function App() {
   const snapshot = useCalendarSnapshot();
   const [pageIndex, setPageIndex] = useState(0);
-  const lastWheelRef = useRef(0);
 
-  const handleWheel = useCallback((event: WheelEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const now = performance.now();
-    if (now - lastWheelRef.current < WHEEL_COOLDOWN_MS) return;
-    lastWheelRef.current = now;
-
+  // 左右方向翻页,到尽头循环
+  const goPage = useCallback((delta: number) => {
     setPageIndex((current) => {
-      // 向下滚(正向 deltaY)= 下一页,向上滚 = 上一页;到尽头循环
-      const step = event.deltaY > 0 ? 1 : -1;
-      const next = (current + step + PAGES.length) % PAGES.length;
+      const next = (current + delta + PAGES.length) % PAGES.length;
       return next;
     });
   }, []);
 
+  // ============ 横向滑动翻页 ============
+  // 鼠标按住拖动 / 触控板两指滑动,横向移动超过阈值就翻一页
+  const SWIPE_THRESHOLD = 40;          // px
+  const WHEEL_COOLDOWN_MS = 300;       // 横向滚轮节流
+
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    currentX: number;
+    active: boolean;
+  } | null>(null);
+
+  const lastWheelRef = useRef(0);
+
+  const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    // 只响应主键(左键 / 单指触摸)
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    // 起点在按钮 / 输入框上时让它们自己处理,不抢
+    const target = e.target as HTMLElement;
+    if (target.closest('button, input, textarea, select, [contenteditable]')) {
+      return;
+    }
+    dragRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      currentX: e.clientX,
+      active: true,
+    };
+  };
+
+  const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const s = dragRef.current;
+    if (!s || !s.active || s.pointerId !== e.pointerId) return;
+    s.currentX = e.clientX;
+  };
+
+  const handlePointerEnd = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const s = dragRef.current;
+    if (!s || !s.active || s.pointerId !== e.pointerId) return;
+    const dx = s.currentX - s.startX;
+    dragRef.current = null;
+
+    if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+    // 向右拖 = 上一页,向左拖 = 下一页
+    goPage(dx > 0 ? -1 : 1);
+  };
+
+  // 横向滚轮 / 触控板双指横扫 —— 只在 deltaX 为主轴时才响应
+  const handleWheel = useCallback(
+    (event: ReactWheelEvent<HTMLDivElement>) => {
+      const dx = event.deltaX;
+      const dy = event.deltaY;
+      if (dx === 0 || Math.abs(dx) <= Math.abs(dy)) return;
+      event.preventDefault();
+
+      const now = performance.now();
+      if (now - lastWheelRef.current < WHEEL_COOLDOWN_MS) return;
+      lastWheelRef.current = now;
+
+      goPage(dx > 0 ? -1 : 1);
+    },
+    [goPage]
+  );
+
   const currentPage: PageKey = PAGES[pageIndex].key;
 
   return (
-    <div className="card drag-region" onWheel={handleWheel}>
-      <div className="page-dots no-drag" aria-hidden>
-        {PAGES.map((page, index) => (
-          <span key={page.key} className={`page-dot${index === pageIndex ? ' active' : ''}`} />
-        ))}
-      </div>
+    <div
+      className="card"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerEnd}
+      onPointerCancel={handlePointerEnd}
+      onWheel={handleWheel}
+    >
+      {/* 顶部 10px 透明拖动条 —— 给 Electron 用来拖动窗口位置 */}
+      <div className="card-drag-strip drag-region" aria-hidden />
 
       <div className="page-fade" key={currentPage}>
         {currentPage === 'today' && <TodayPage {...snapshot} />}
         {currentPage === 'water' && <WaterTracker />}
         {currentPage === 'gacha' && <LunchGacha />}
+        {currentPage === 'quote' && <DailyQuote />}
       </div>
+
+      <nav className="page-nav no-drag" aria-label="页面导航">
+        <button
+          type="button"
+          className="page-nav-btn"
+          onClick={() => goPage(-1)}
+          aria-label="上一页"
+          title="向左拖动也可翻到上一页"
+        >
+          ‹
+        </button>
+        <div className="page-dots" aria-hidden>
+          {PAGES.map((page, index) => (
+            <button
+              type="button"
+              key={page.key}
+              className={`page-dot${index === pageIndex ? ' active' : ''}`}
+              aria-label={`第 ${index + 1} 页 · ${page.label}`}
+              onClick={() => setPageIndex(index)}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          className="page-nav-btn"
+          onClick={() => goPage(1)}
+          aria-label="下一页"
+          title="向右拖动也可翻到下一页"
+        >
+          ›
+        </button>
+      </nav>
     </div>
   );
 }

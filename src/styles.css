@@ -34,7 +34,7 @@ body,
   position: relative;
   width: 280px;
   height: 320px;
-  padding: 18px 22px 14px;
+  padding: 18px 22px 28px;
   background: #fbf6ec;
   border: 1px solid rgba(58, 54, 46, 0.08);
   border-radius: 20px;
@@ -45,6 +45,22 @@ body,
   /* 固定高度让三页 (日历 / 饮水 / 扭蛋) 渲染出来视觉大小一致;
      内容溢出时裁掉,避免突破 border-radius 的圆角 */
   overflow: hidden;
+  touch-action: pan-y;  /* 允许纵向滚动穿透,横向交给 swipe 处理 */
+}
+
+/* 顶部 10px 透明拖动条 —— Electron 用这块 -webkit-app-region: drag 拖窗口
+   卡片主体保留给 swipe 手势 */
+.card-drag-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 10px;
+  z-index: 20;
+  cursor: grab;
+}
+.card-drag-strip:active {
+  cursor: grabbing;
 }
 
 .header {
@@ -233,32 +249,88 @@ body,
 }
 
 /* ====================================================================== */
-/* 翻页:页面指示点 + 翻页淡入动画                                          */
+/* 翻页:底部横排 dot + 左右翻页按钮 + 翻页淡入动画                          */
+/* 视觉参考 page4.html 的 .pager                                            */
 /* ====================================================================== */
 
-.page-dots {
+.page-nav {
   position: absolute;
-  left: 9px;
-  top: 50%;
-  transform: translateY(-50%);
-  flex-direction: column;
-  gap: 5px;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
   z-index: 10;
 }
+
+.page-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .page-dot {
   width: 5px;
   height: 5px;
-  border-radius: 999px;
+  padding: 0;
+  border: none;
   background: rgba(58, 54, 46, 0.18);
-  transition: background 0.2s ease, height 0.2s ease;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.2s ease, width 0.2s ease;
+}
+.page-dot:hover {
+  background: rgba(58, 54, 46, 0.32);
+}
+.page-dot.active {
+  width: 14px;
+  background: #5b7f5a;
+}
+.page-dot:focus-visible {
+  outline: 2px solid #4fa8e8;
+  outline-offset: 2px;
 }
 
-.page-dot.active {
-  background: #5b7f5a;
-  height: 14px;
+.page-nav-btn {
+  width: 16px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: rgba(58, 54, 46, 0.38);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease, background 0.2s ease, transform 0.1s ease;
+}
+.page-nav-btn:hover {
+  color: #5b7f5a;
+  background: rgba(91, 127, 90, 0.08);
+}
+.page-nav-btn:active {
+  transform: scale(0.92);
+}
+.page-nav-btn:focus-visible {
+  outline: 2px solid #4fa8e8;
+  outline-offset: 1px;
 }
 
 .page-fade {
+  /* 撑出明确高度,让内部 absolute 子元素(.quote-section)有正确的 containing block
+     —— 否则 .page-fade 的 transform 动画会把 absolute 子元素的参照改成自己,
+     而自己因为唯一子元素也是 absolute 而高度塌缩成 0 */
+  position: absolute;
+  top: 18px;
+  left: 22px;
+  right: 22px;
+  bottom: 28px;
   animation: page-fade-in 0.32s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
@@ -741,6 +813,168 @@ body,
 @media (prefers-reduced-motion: reduce) {
   .spin-btn,
   .result-window {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ====================================================================== */
+/* 每日一言 — Hitokoto 接口 + 兜底本地例句                                    */
+/* ====================================================================== */
+
+.quote-section {
+  /* absolute 填满 .page-fade 整个内容区(后者已 absolute 撑出 .card 内容区大小)
+     —— 这样内部 flex:1 的 .quote-area 才能撑开中间空间,
+     caption 才能稳稳落在最底(在 pager 上方) */
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.quote-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 4px 0 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #3a362e;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.quote-title .quote-tag {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5b7f5a;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.quote-subtitle {
+  margin: 5px 0 0;
+  font-size: 11.5px;
+  color: #8b8477;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quote-area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 2px 2px;
+  width: 100%;
+  min-width: 0;
+}
+
+.quote-mark {
+  position: absolute;
+  top: -10px;
+  left: 2px;
+  font-size: 42px;
+  font-weight: 800;
+  color: #e08e45;
+  opacity: 0.18;
+  font-family: Georgia, 'Songti SC', serif;
+  line-height: 1;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* 引用文字本身是个按钮 —— 点击换一句 */
+.quote-text {
+  font-family: 'Songti SC', 'STSong', 'Noto Serif SC', Georgia, serif;
+  font-weight: 600;
+  color: #3a362e;
+  text-align: center;
+  line-height: 1.7;
+  max-width: 100%;
+  margin: 0;
+  padding: 4px 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  word-break: break-word;
+  border-radius: 8px;
+  transition: opacity 0.35s ease, transform 0.35s ease,
+              background 0.2s ease;
+}
+.quote-text:hover:not(:disabled):not(.placeholder) {
+  background: rgba(91, 127, 90, 0.06);
+}
+.quote-text:active:not(:disabled):not(.placeholder) {
+  background: rgba(91, 127, 90, 0.12);
+  transform: scale(0.98);
+}
+.quote-text:focus-visible {
+  outline: 2px solid #4fa8e8;
+  outline-offset: 2px;
+}
+.quote-text:disabled {
+  cursor: default;
+}
+
+.quote-text.placeholder {
+  color: #a8a196;
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 12px;
+  cursor: default;
+  pointer-events: none;
+}
+
+.quote-text.loading {
+  cursor: wait;
+  animation: quote-pulse 1.3s ease-in-out infinite;
+}
+@keyframes quote-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}
+
+.quote-attr {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  color: #8b8477;
+  text-align: center;
+  font-family: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.quote-caption {
+  margin: 4px 0 0;
+  padding-top: 4px;
+  font-size: 10.5px;
+  color: #a8a196;
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quote-text {
     animation: none !important;
     transition: none !important;
   }
