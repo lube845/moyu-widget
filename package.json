@@ -15,8 +15,8 @@
     "fetch-holidays": "node tools/fetch-holidays.mjs"
   },
   "build": {
-  "appId": "com.lube.moyu-widget",
-  "productName": "摸鱼小组件",
+    "appId": "com.lube.moyu-widget",
+    "productName": "摸鱼小组件",
     "files": ["dist/**", "electron/**"],
     "directories": { "output": "release" },
     "win": {

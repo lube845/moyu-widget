@@ -40,9 +40,20 @@ function defaultPosition() {
   };
 }
 
+/** 保存的位置是否仍落在某个显示器的工作区内（换屏/改分辨率后可能失效） */
+function isBoundsOnScreen(x, y) {
+  return screen.getAllDisplays().some(({ workArea }) => (
+    x >= workArea.x &&
+    y >= workArea.y &&
+    x + CARD_SIZE.width <= workArea.x + workArea.width &&
+    y + CARD_SIZE.height <= workArea.y + workArea.height
+  ));
+}
+
 function createWindow() {
   const saved = loadSavedBounds();
-  const position = saved ?? defaultPosition();
+  const position =
+    saved && isBoundsOnScreen(saved.x, saved.y) ? saved : defaultPosition();
 
   win = new BrowserWindow({
     width: CARD_SIZE.width,
@@ -103,12 +114,24 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(createWindow);
-
-app.on('window-all-closed', () => {
+// 单实例锁：重复启动时不再开新窗口，而是把已有窗口带回前台
+if (!app.requestSingleInstanceLock()) {
   app.quit();
-});
+} else {
+  app.on('second-instance', () => {
+    if (win) {
+      win.show();
+      win.focus();
+    }
+  });
 
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow();
-});
+  app.whenReady().then(createWindow);
+
+  app.on('window-all-closed', () => {
+    app.quit();
+  });
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+}

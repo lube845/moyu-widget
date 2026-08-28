@@ -8,6 +8,7 @@ import {
 } from 'react';
 import DailyQuote from './components/DailyQuote';
 import LunchGacha from './components/LunchGacha';
+import NiumaCalendar from './components/NiumaCalendar';
 import WaterTracker from './components/WaterTracker';
 import { useCalendarSnapshot } from './lib/useCalendarStatus';
 import { computeOffworkProgress, computePayrollProgress } from './lib/calendar';
@@ -93,6 +94,7 @@ function useOffwork(): readonly [OffworkTime, (t: OffworkTime) => void] {
 
 const PAGES = [
   { key: 'today', label: '日历' },
+  { key: 'almanac', label: '黄历' },
   { key: 'water', label: '饮水' },
   { key: 'gacha', label: '扭蛋' },
   { key: 'quote', label: '一言' },
@@ -306,8 +308,8 @@ function HighlightLine({ status }: { status: ReturnType<typeof useCalendarSnapsh
 
   return (
     <p className="highlight">
-      距周五还有 <b>{status.daysToFriday}</b> 天 · 距「{status.nextHoliday.name}」还有{' '}
-      <b>{status.nextHoliday.days}</b> 天
+      <span className="highlight-line">距周五还有 <b>{status.daysToFriday}</b> 天</span>
+      <span className="highlight-line">距「{status.nextHoliday.name}」还有 <b>{status.nextHoliday.days}</b> 天</span>
     </p>
   );
 }
@@ -396,6 +398,12 @@ export default function App() {
       currentX: e.clientX,
       active: true,
     };
+    // 捕获指针:拖到卡片外松手也能收到 pointerup,dragRef 不会残留旧状态
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // 个别环境不支持时降级为普通行为
+    }
   };
 
   const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -451,6 +459,7 @@ export default function App() {
         {currentPage === 'water' && <WaterTracker />}
         {currentPage === 'gacha' && <LunchGacha />}
         {currentPage === 'quote' && <DailyQuote />}
+        {currentPage === 'almanac' && <NiumaCalendar />}
       </div>
 
       <nav className="page-nav no-drag" aria-label="页面导航">

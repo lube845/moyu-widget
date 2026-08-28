@@ -57,6 +57,9 @@ export default function WaterTracker() {
     };
     document.addEventListener('visibilitychange', onVisible);
 
+    // 用 ref 保存"当前这一代"定时器 id:递归重排后 cleanup 才能清掉最新那个,
+    // 否则跨过一次午夜再卸载组件时,排到明天的那颗定时器就漏掉了
+    const midnightTimerRef: { current: number | null } = { current: null };
     const scheduleMidnight = () => {
       const now = new Date();
       const next = new Date(
@@ -67,16 +70,18 @@ export default function WaterTracker() {
         0,
         1
       );
-      return window.setTimeout(() => {
+      midnightTimerRef.current = window.setTimeout(() => {
         update(0);
         scheduleMidnight();
       }, next.getTime() - now.getTime());
     };
-    const tid = scheduleMidnight();
+    scheduleMidnight();
 
     return () => {
       document.removeEventListener('visibilitychange', onVisible);
-      window.clearTimeout(tid);
+      if (midnightTimerRef.current !== null) {
+        window.clearTimeout(midnightTimerRef.current);
+      }
     };
   }, [update]);
 
@@ -105,15 +110,6 @@ export default function WaterTracker() {
 
   return (
     <section className="water-section">
-      <button
-        type="button"
-        className="water-reset no-drag"
-        title="重置今日记录"
-        onClick={() => update(0)}
-      >
-        ↺ 重置
-      </button>
-
       <header className="header">
         <span className="date">今日饮水</span>
         <span
@@ -122,10 +118,15 @@ export default function WaterTracker() {
         >
           {done ? '已达标 🎉' : `目标 ${TOTAL} 杯`}
         </span>
+        <button
+          type="button"
+          className="water-reset no-drag"
+          title="重置今日记录"
+          onClick={() => update(0)}
+        >
+          ↺ 重置
+        </button>
       </header>
-      <p className="water-subtitle">
-        成人建议每日饮水 1500–2000ml（约 6–8 杯，每杯 250ml）
-      </p>
 
       <div className="divider" />
 
@@ -190,7 +191,7 @@ export default function WaterTracker() {
       <p className="water-caption">
         {done
           ? `太棒了，今日已喝 ${ml}ml，目标已完成！`
-          : `已喝 ${ml}ml · 目标 ${targetMl}ml · 点击下一个杯子记录一次饮水`}
+          : `已喝 ${ml}ml · 目标 ${targetMl}ml · 点击杯子记录饮水`}
       </p>
     </section>
   );

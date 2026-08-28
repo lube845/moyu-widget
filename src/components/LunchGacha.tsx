@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { addItem, loadItems, pickRandom, removeItem, type LunchItem } from '../lib/lunchItems';
 
 const ROLLING_STEPS = 18;        // 循环步数,模仿转轮减速
@@ -16,6 +16,20 @@ export default function LunchGacha() {
 
   const stepRef = useRef(0);
   const [lastPick, setLastPick] = useState<string | null>(null);
+
+  // 滚动 / 落定动画的 pending 定时器。滚动链是串行的,存最新一颗即可,
+  // 组件卸载(翻页离开)时统一清掉,避免对已卸载组件继续 setState
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const schedule = (fn: () => void, ms: number) => {
+    timerRef.current = window.setTimeout(fn, ms);
+  };
 
   const handleAdd = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -56,7 +70,7 @@ export default function LunchGacha() {
       stepRef.current++;
       setDisplayItem(pickRandom(items));
       if (stepRef.current < ROLLING_STEPS) {
-        window.setTimeout(tick, ROLLING_BASE_MS + stepRef.current * ROLLING_STEP_MS);
+        schedule(tick, ROLLING_BASE_MS + stepRef.current * ROLLING_STEP_MS);
       } else {
         // 落定:跟 HTML 原型一样,先显示 finalPick、加 .settle 类,400ms 后移除
         setDisplayItem(finalPick);
@@ -64,7 +78,7 @@ export default function LunchGacha() {
         setSettling(true);
         setSpinCount((c) => c + 1);
         setLastPick(finalPick.item);
-        window.setTimeout(() => setSettling(false), 400);
+        schedule(() => setSettling(false), 400);
       }
     };
     tick();
@@ -88,16 +102,16 @@ export default function LunchGacha() {
       <header className="lunch-title-row">
         <span className="lunch-title">午餐扭蛋</span>
         <span className="lunch-pool-count">共 {items.length} 个选项</span>
+        <button
+          type="button"
+          className="manage-toggle no-drag"
+          onClick={() => setInManage((v) => !v)}
+          disabled={spinning}
+          title={spinning ? '扭蛋滚动中…' : '管理午餐选项'}
+        >
+          {inManage ? '‹ 返回' : '✎ 管理'}
+        </button>
       </header>
-
-      <button
-        type="button"
-        className="manage-toggle no-drag"
-        onClick={() => setInManage((v) => !v)}
-        title="管理午餐选项"
-      >
-        {inManage ? '‹ 返回' : '✎ 管理'}
-      </button>
 
       <div className="divider" />
 
