@@ -10,6 +10,14 @@
 
 暖白卡片 + 抹茶绿 / 杏橙点缀；离线可用（节假日内置），运行时只在一言页拉一次 API。
 
+<p>
+  <img src="docs/screenshots/1-calendar.png" width="140" alt="日历页" />
+  <img src="docs/screenshots/2-almanac.png" width="140" alt="牛马黄历页" />
+  <img src="docs/screenshots/3-water.png" width="140" alt="饮水页" />
+  <img src="docs/screenshots/4-gacha.png" width="140" alt="扭蛋页" />
+  <img src="docs/screenshots/5-quote.png" width="140" alt="一言页" />
+</p>
+
 ## 1. 安装依赖
 
 ```powershell
