@@ -6,3 +6,4 @@ page*.html
 *.tsbuildinfo
 vite.config.js
 vite.config.d.ts
+.workbuddy/
