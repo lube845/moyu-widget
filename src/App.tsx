@@ -423,19 +423,23 @@ export default function App() {
     goPage(dx > 0 ? -1 : 1);
   };
 
-  // 横向滚轮 / 触控板双指横扫 —— 只在 deltaX 为主轴时才响应
+  // 滚轮 / 触控板翻页 —— 横向为主轴时沿用横扫逻辑,纵向为主轴时上滚=上一页、下滚=下一页
   const handleWheel = useCallback(
     (event: ReactWheelEvent<HTMLDivElement>) => {
       const dx = event.deltaX;
       const dy = event.deltaY;
-      if (dx === 0 || Math.abs(dx) <= Math.abs(dy)) return;
+      if (dx === 0 && dy === 0) return;
       event.preventDefault();
 
       const now = performance.now();
       if (now - lastWheelRef.current < WHEEL_COOLDOWN_MS) return;
       lastWheelRef.current = now;
 
-      goPage(dx > 0 ? -1 : 1);
+      const delta =
+        Math.abs(dx) > Math.abs(dy)
+          ? (dx > 0 ? -1 : 1)  // 横扫:向右 = 上一页(与拖动一致)
+          : (dy > 0 ? 1 : -1); // 纵向:下滚 = 下一页(与滚动条浏览方向一致)
+      goPage(delta);
     },
     [goPage]
   );

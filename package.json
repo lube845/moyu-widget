@@ -10,13 +10,14 @@
     "dev:electron": "wait-on tcp:5173 && cross-env NODE_ENV=development electron .",
     "dev": "concurrently -k -n renderer,electron \"npm:dev:renderer\" \"npm:dev:electron\"",
     "build:renderer": "tsc -b && vite build",
-    "build": "npm run build:renderer && electron-builder",
+    "build": "npm run build:renderer && electron-builder && node tools/clean-release.mjs",
     "typecheck": "tsc -b --noEmit",
     "fetch-holidays": "node tools/fetch-holidays.mjs"
   },
   "build": {
     "appId": "com.lube.moyu-widget",
     "productName": "摸鱼小组件",
+    "afterPack": "tools/trim-locales.cjs",
     "files": ["dist/**", "electron/**"],
     "directories": { "output": "release" },
     "win": {

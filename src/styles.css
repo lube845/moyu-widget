@@ -33,7 +33,7 @@ body,
 .card {
   position: relative;
   width: 280px;
-  height: 320px;
+  height: 300px;
   padding: 18px 22px 28px;
   background: #fbf6ec;
   border: 1px solid rgba(58, 54, 46, 0.08);
