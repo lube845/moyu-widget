@@ -14,7 +14,7 @@
 <p>
   <img src="docs/screenshots/1-calendar.png" width="140" alt="日历页" />
   <img src="docs/screenshots/2-almanac.png" width="140" alt="牛马黄历页" />
-  <img src="docs/screenshots/6-todo.png" width="140" alt="待办事项页" />
+  <img src="docs/screenshots/2-todo.png" width="140" alt="待办事项页" />
   <img src="docs/screenshots/4-water.png" width="140" alt="饮水页" />
   <img src="docs/screenshots/5-gacha.png" width="140" alt="扭蛋页" />
   <img src="docs/screenshots/6-quote.png" width="140" alt="一言页" />
