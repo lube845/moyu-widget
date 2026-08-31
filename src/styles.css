@@ -1083,3 +1083,258 @@ body,
   line-height: 1.5;
   text-align: center;
 }
+
+/* ====================================================================== */
+/* 待办事项 — 自管理清单,localStorage 持久化                                  */
+/* ====================================================================== */
+
+.todo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  height: 100%;
+}
+
+/* 清完成按钮 — 复用 .water-reset 的位置策略(margin-left:auto 进标题行 flex 流) */
+.todo-clear {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: #8b8477;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  opacity: 0.55;
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+.todo-clear:hover:not(:disabled) {
+  opacity: 1;
+  background: rgba(58, 54, 46, 0.06);
+}
+.todo-clear:focus-visible {
+  outline: 2px solid #4fa8e8;
+  outline-offset: 2px;
+}
+.todo-clear:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* 新增待办输入行 —— 复用 .add-row 风格,把 .todo-* 前缀隔开避免冲突 */
+.todo-add-row {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.todo-add-row input {
+  flex: 1;
+  border: 1px solid rgba(58, 54, 46, 0.15);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 12px;
+  background: #fff;
+  color: #3a362e;
+  outline: none;
+  min-width: 0;
+  transition: border-color 0.15s ease;
+}
+.todo-add-row input:focus {
+  border-color: #4fa8e8;
+}
+
+.todo-add-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 0 10px;
+  flex-shrink: 0;
+  background: #6c8e70;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+}
+.todo-add-btn:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.todo-add-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.todo-add-btn:focus-visible {
+  outline: 2px solid #4fa8e8;
+  outline-offset: 2px;
+}
+
+/* 列表区域 —— flex:1 吃掉标题 / 输入行 / 进度条之间的剩余高度 */
+.todo-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 2px;
+  scrollbar-width: thin;
+}
+.todo-list::-webkit-scrollbar {
+  width: 4px;
+}
+.todo-list::-webkit-scrollbar-thumb {
+  background: rgba(58, 54, 46, 0.18);
+  border-radius: 4px;
+}
+.todo-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 单条待办 —— 米色 pill + 圆圈复选框 + 悬浮 × 删除 */
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #efe7d8;
+  border-radius: 8px;
+  padding: 6px 8px;
+  flex-shrink: 0;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease,
+    background 0.2s ease;
+}
+.todo-item.leaving {
+  opacity: 0;
+  transform: translateX(12px);
+}
+
+.todo-check {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1.5px solid #5b7f5a;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  padding: 0;
+}
+.todo-check::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+.todo-item.done .todo-check {
+  background: #5b7f5a;
+  border-color: #5b7f5a;
+}
+.todo-item.done .todo-check::after {
+  background: #fff;
+}
+.todo-check:focus-visible {
+  outline: 2px solid #4fa8e8;
+  outline-offset: 2px;
+}
+
+.todo-text {
+  flex: 1;
+  font-size: 12px;
+  color: #3a362e;
+  line-height: 1.35;
+  word-break: break-word;
+  transition: color 0.2s ease;
+}
+.todo-item.done .todo-text {
+  color: #a8a196;
+  text-decoration: line-through;
+}
+
+.todo-del {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #a8a196;
+  font-size: 12px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  padding: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.todo-item:hover .todo-del,
+.todo-del:focus-visible {
+  opacity: 1;
+}
+.todo-del:hover {
+  background: rgba(58, 54, 46, 0.1);
+  color: #3a362e;
+}
+
+/* 空状态 —— 与 page5.html 设计一致,垂直水平居中 */
+.todo-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #a8a196;
+  font-size: 12px;
+  gap: 4px;
+  text-align: center;
+}
+.todo-empty .emoji {
+  font-size: 22px;
+}
+
+/* 进度条 —— 复用 .tank-row 的 grid 排版 + .tank-fill 渐变 */
+.todo-progress {
+  display: grid;
+  grid-template-columns: auto 1fr 32px;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.todo-progress-label {
+  font-size: 11px;
+  color: #8b8477;
+}
+.todo-progress-percent {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: #8b8477;
+  text-align: right;
+}
+
+.todo-caption {
+  margin: 0;
+  font-size: 10px;
+  color: #a8a196;
+  line-height: 1.4;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .todo-item,
+  .todo-check,
+  .todo-text,
+  .todo-del {
+    transition: none !important;
+  }
+}
+

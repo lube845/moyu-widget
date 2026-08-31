@@ -9,6 +9,7 @@ import {
 import DailyQuote from './components/DailyQuote';
 import LunchGacha from './components/LunchGacha';
 import NiumaCalendar from './components/NiumaCalendar';
+import TodoList from './components/TodoList';
 import WaterTracker from './components/WaterTracker';
 import { useCalendarSnapshot } from './lib/useCalendarStatus';
 import { computeOffworkProgress, computePayrollProgress } from './lib/calendar';
@@ -95,6 +96,7 @@ function useOffwork(): readonly [OffworkTime, (t: OffworkTime) => void] {
 const PAGES = [
   { key: 'today', label: '日历' },
   { key: 'almanac', label: '黄历' },
+  { key: 'todo', label: '待办' },
   { key: 'water', label: '饮水' },
   { key: 'gacha', label: '扭蛋' },
   { key: 'quote', label: '一言' },
@@ -462,6 +464,7 @@ export default function App() {
         {currentPage === 'today' && <TodayPage {...snapshot} />}
         {currentPage === 'water' && <WaterTracker />}
         {currentPage === 'gacha' && <LunchGacha />}
+        {currentPage === 'todo' && <TodoList />}
         {currentPage === 'quote' && <DailyQuote />}
         {currentPage === 'almanac' && <NiumaCalendar />}
       </div>
